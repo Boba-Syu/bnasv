@@ -11,13 +11,18 @@ repositories {
 }
 
 dependencies {
-    implementation("io.vertx:vertx-core:4.5.3")
-    implementation("io.vertx:vertx-lang-kotlin:4.5.3")
-    implementation("io.vertx:vertx-web:4.5.3")
-    implementation("io.vertx:vertx-auth-jwt:4.5.3")
-    implementation("io.vertx:vertx-auth-common:4.5.3")
-    implementation("io.vertx:vertx-lang-kotlin-coroutines:4.5.3")
     testImplementation(kotlin("test"))
+
+    implementation("io.vertx:vertx-core:4.4.0")
+    implementation("io.vertx:vertx-lang-kotlin:4.4.0")
+    implementation("io.vertx:vertx-web:4.4.0")
+    implementation("io.vertx:vertx-auth-jwt:4.4.0")
+    implementation("io.vertx:vertx-auth-common:4.4.0")
+    implementation("io.vertx:vertx-lang-kotlin-coroutines:4.4.0")
+    implementation("io.vertx:vertx-mysql-client:4.4.0")
+
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
 }
 
 tasks.test {
