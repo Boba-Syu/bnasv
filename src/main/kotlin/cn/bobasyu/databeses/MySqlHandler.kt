@@ -7,8 +7,7 @@ import io.vertx.kotlin.mysqlclient.mySQLConnectOptionsOf
 import io.vertx.kotlin.sqlclient.poolOptionsOf
 import io.vertx.mysqlclient.MySQLConnectOptions
 import io.vertx.mysqlclient.MySQLPool
-import io.vertx.sqlclient.PoolOptions
-import io.vertx.sqlclient.Tuple
+import io.vertx.sqlclient.*
 
 
 class MySqlClient(
@@ -31,17 +30,26 @@ class MySqlClient(
     }
 
     inline fun <reified T> query(sql: String, resultType: Class<T>): Future<List<T>> =
-        sqlPool.withConnection { connection ->
-            connection.query(sql).execute().map { rowSet ->
+        sqlPool.withConnection { connection: SqlConnection ->
+            connection.query(sql).execute().map { rowSet: RowSet<Row> ->
                 rowSet.map { row -> row.toJson().toString().parseJson(resultType) }.toList()
             }
         }
 
-    inline fun <reified T> queryByCondition(sql: String, conditions: Tuple, resultType: Class<T>): Future<T> =
-        sqlPool.withConnection { connection ->
+    inline fun <reified T> queryByConditions(sql: String, conditions: List<Tuple>, resultType: Class<T>): Future<T> =
+        sqlPool.withConnection { connection: SqlConnection ->
             connection.preparedQuery(sql)
-                .execute(conditions)
+                .executeBatch(conditions)
                 .map { rowSet -> rowSet.first().toJson().toString().parseJson(resultType) }
                 .onFailure { throw it }
         }
+
+    fun insert(sql: String, insertData: List<Tuple>): Future<Unit> =
+        sqlPool.withConnection { connection: SqlConnection ->
+            connection.preparedQuery(sql)
+                .executeBatch(insertData)
+                .map { }
+                .onFailure { throw it }
+        }
+
 }

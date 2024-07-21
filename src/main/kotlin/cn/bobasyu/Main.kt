@@ -1,7 +1,9 @@
 package cn.bobasyu
 
+import cn.bobasyu.base.failure
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.user.deployUserVerticle
+import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
@@ -13,6 +15,7 @@ class MainVerticle : CoroutineVerticle() {
     override suspend fun start() {
         val mySqlClient = MySqlClient(vertx)
         val router = Router.router(vertx)
+        router.registerFailureHandler()
         vertx.deployUserVerticle(mySqlClient, router)
 
         server.requestHandler(router)
@@ -23,6 +26,12 @@ class MainVerticle : CoroutineVerticle() {
     override suspend fun stop() {
         server.close()
         vertx.close()
+    }
+
+    private fun Router.registerFailureHandler() {
+        route().last().failureHandler { ctx ->
+            ctx.response().end(failure(ctx.failure().message).toJson())
+        }
     }
 }
 
