@@ -31,17 +31,16 @@ class UserRepositoryVerticle(
         mySqlClient.queryByConditions(QUERY_BY_ID_SQL, condition, UserRecord::class.java)
             .onSuccess { userRecordList: List<UserRecord> ->
                 if (userRecordList.isEmpty()) {
-
+                    throw NoSuchRecordInDatabaseException()
                 }
                 message.reply(userRecordList.first())
-            }
-            .onFailure { message.fail(500, it.message) }
+            }.onFailure { message.fail(500, it.message) }
     }
 
     override fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
         val userInsertDTO: UserInsertDTO = message.body()
         val condition: List<Tuple> = listOf(
-            Tuple.of(userInsertDTO.userName, userInsertDTO.password)
+            Tuple.of(userInsertDTO.username, userInsertDTO.password)
         )
         mySqlClient.save(INSERT_SQL, condition)
             .onFailure { message.fail(500, it.message) }

@@ -11,9 +11,9 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 
 class MainVerticle : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
+    private val mySqlClient: MySqlClient by lazy { MySqlClient(vertx) }
 
     override suspend fun start() {
-        val mySqlClient = MySqlClient(vertx)
         val router = Router.router(vertx)
         router.registerFailureHandler()
         vertx.deployUserVerticle(mySqlClient, router)
@@ -24,6 +24,7 @@ class MainVerticle : CoroutineVerticle() {
     }
 
     override suspend fun stop() {
+        mySqlClient.close()
         server.close()
         vertx.close()
     }
