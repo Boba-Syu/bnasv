@@ -9,6 +9,9 @@ import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 
+/**
+ * MainVerticle 注册全部服务
+ */
 class MainVerticle : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
     private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }

@@ -9,11 +9,19 @@ object ObjectJson {
     val objectMapper = jacksonObjectMapper()
 }
 
+/**
+ * 任意类型转Json字符串方法
+ */
 fun Any.toJson(): String = objectMapper.writeValueAsString(this)
 
+/**
+ * json字符串转换为指定类型
+ */
 fun <T> String.parseJson(objectType: Class<T>): T = objectMapper.readValue(this, objectType)
 
-
+/**
+ * json序列化器类，在eventBus注册中使用
+ */
 class BaseCodec<T : Any>(private val type: Class<T>) : MessageCodec<T, T> {
 
     override fun encodeToWire(buffer: Buffer, t: T) {
@@ -25,7 +33,7 @@ class BaseCodec<T : Any>(private val type: Class<T>) : MessageCodec<T, T> {
 
     override fun transform(t: T): T = t
 
-    override fun name(): String =type.name
+    override fun name(): String = type.name
 
     override fun systemCodecID(): Byte = -1
 }

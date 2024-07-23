@@ -9,6 +9,9 @@ import cn.bobasyu.user.UserSQL.QUERY_LIST_SQL
 import io.vertx.core.eventbus.Message
 import io.vertx.sqlclient.Tuple
 
+/**
+ * 数据库操作SQL语句
+ */
 object UserSQL {
     const val QUERY_LIST_SQL = "select * from db_user"
     const val QUERY_BY_ID_SQL = "select * from db_user where user_id = ?"
@@ -16,6 +19,9 @@ object UserSQL {
     const val INSERT_SQL = "insert into db_user (user_name, password) values(?, ?)"
 }
 
+/**
+ * AbstractUserRepository使用vertx-mysql的具体实现
+ */
 class UserRepositoryVerticle(
     private val mySqlClient: MySqlClient,
 ) : AbstractUserRepository() {
@@ -37,7 +43,7 @@ class UserRepositoryVerticle(
             }.onFailure { message.fail(500, it.message) }
     }
 
-    override fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
+    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
         val userInsertDTO: UserInsertDTO = message.body()
         val condition: List<Tuple> = listOf(
             Tuple.of(userInsertDTO.username, userInsertDTO.password)
