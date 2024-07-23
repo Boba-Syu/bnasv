@@ -5,6 +5,7 @@ import cn.bobasyu.base.success
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.utils.BaseCodec
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
@@ -45,6 +46,41 @@ class UserVerticle(
         }
     }
 }
+
+
+abstract class AbstractUserRepository : BaseCoroutineVerticle() {
+
+    private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
+
+    override suspend fun start() {
+        registerConsumer()
+    }
+
+    private suspend fun registerConsumer() = with(eventBus) {
+        registerQueryUserListEvent()
+        registerQueryUserByIdEvent()
+        registerInsertUserEvent()
+    }
+
+    private suspend fun EventBus.registerQueryUserListEvent() {
+        asyncConsumer(USER_QUERY_EVENT) { handleQueryUserListEvent(it) }
+    }
+
+    private suspend fun EventBus.registerQueryUserByIdEvent() {
+        asyncConsumer(USER_QUERY_BY_ID_EVENT) { handleQueryUserByIdEvent(it) }
+    }
+
+    private suspend fun EventBus.registerInsertUserEvent() {
+        asyncConsumer(USER_INSERT_EVENT) { handleInsertUserEvent(it) }
+    }
+
+    abstract suspend fun handleQueryUserListEvent(message: Message<Unit>)
+
+    abstract suspend fun handleQueryUserByIdEvent(message: Message<Int>)
+
+    abstract fun handleInsertUserEvent(message: Message<InsertUserDto>)
+}
+
 
 fun EventBus.registerCodecs(): EventBus = this
     .registerDefaultCodec(InsertUserDto::class.java, BaseCodec(InsertUserDto::class.java))
