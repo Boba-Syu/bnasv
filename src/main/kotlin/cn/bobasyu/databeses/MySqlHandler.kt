@@ -36,12 +36,13 @@ class MySqlClient(
             }
         }
 
-    inline fun <reified T> queryByConditions(sql: String, conditions: List<Tuple>, resultType: Class<T>): Future<T> =
+    inline fun <reified T> queryByConditions(sql: String, conditions: List<Tuple>, resultType: Class<T>): Future<List<T>> =
         sqlPool.withConnection { connection: SqlConnection ->
             connection.preparedQuery(sql)
                 .executeBatch(conditions)
-                .map { rowSet -> rowSet.first().toJson().toString().parseJson(resultType) }
-                .onFailure { throw it }
+                .map { rowSet ->
+                    rowSet.map { it.toJson().toString().parseJson(resultType) }
+                }.onFailure { throw it }
         }
 
     fun save(sql: String, insertData: List<Tuple>): Future<Unit> =

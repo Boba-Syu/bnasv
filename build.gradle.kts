@@ -23,6 +23,8 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
+
+    implementation("org.slf4j:slf4j-jdk14:1.5.6")
 }
 
 tasks.test {
