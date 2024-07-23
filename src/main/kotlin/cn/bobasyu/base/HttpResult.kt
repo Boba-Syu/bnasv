@@ -12,4 +12,7 @@ fun success(): HttpResult<Unit> = HttpResult(code = 200)
 
 fun failure(message: String?): HttpResult<Unit> = HttpResult(code = 500, message = message)
 
-fun failure(exception: Throwable): HttpResult<Unit> = HttpResult(code = 500, message = exception.message)
+fun failure(e: Throwable): HttpResult<Unit> = when (e) {
+    is BaseException -> HttpResult(code = e.code, message = e.message)
+    else -> HttpResult(code = 500, message = e.message)
+}

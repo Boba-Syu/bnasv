@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class UserRecord(
     @JsonProperty("user_id") val userId: Int,
-    @JsonProperty("user_name") val userName: String,
+    @JsonProperty("username") val username: String,
     @JsonProperty("password") val password: String,
 )
 
 data class UserInsertDTO(
-    val userName: String,
+    val username: String,
     val password: String,
 )
 

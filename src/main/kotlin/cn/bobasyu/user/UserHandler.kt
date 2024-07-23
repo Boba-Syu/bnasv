@@ -14,11 +14,11 @@ import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
-import io.vertx.ext.auth.authentication.AuthenticationProvider
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.auth.jwt.JWTAuthOptions
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.BasicAuthHandler
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.await
@@ -37,10 +37,11 @@ class UserVerticle(
 
     private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
 
-    private val provider: AuthenticationProvider by lazy {
+    private val provider: JWTAuth by lazy {
         val jwtAuthOptions: JWTAuthOptions = jwtAuthOptionsOf()
         JWTAuth.create(vertx, jwtAuthOptions)
     }
+    private val basicAutHandler by lazy { BasicAuthHandler.create(provider) }
 
     override suspend fun start() {
         setUserRouter()
@@ -48,20 +49,26 @@ class UserVerticle(
 
     private suspend fun setUserRouter() = with(router) {
         post("/login").coroutineHandler { loginHandler(it) }
-        get("/user/query/id/:id").coroutineHandler { queryByIdHandler(it) }
+
+        get("/user/query/id/:id").handler(basicAutHandler).coroutineHandler { queryByIdHandler(it) }
         post("/user/register").coroutineHandler { queryRegisterHandler(it) }
     }
 
-    private fun loginHandler(ctx: RoutingContext) {
+    private suspend fun loginHandler(ctx: RoutingContext) {
         ctx.request().asyncRequestBodyHandler { body: Buffer ->
             // 验证用户名和密码
             val userLoginDTO: UserInsertDTO = body.toString().parseJson(UserInsertDTO::class.java)
-            eventBus.request<UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT, userLoginDTO)
-                .onSuccess {
-                    // todo 使用jwt做鉴权
-
-                }.onFailure { throw it }
-
+            val userRecord: UserRecord =
+                eventBus.request<UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT, userLoginDTO)
+                    .await().body()
+            // 使用jwt做鉴权
+            provider.generateToken(json {
+                obj {
+                    "userId" to userRecord.userId
+                    "username" to userRecord.username
+                }
+            })
+            ctx.response().end(success().toString())
         }
     }
 
