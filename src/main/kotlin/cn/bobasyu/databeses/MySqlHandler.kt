@@ -3,7 +3,6 @@ package cn.bobasyu.databeses
 import cn.bobasyu.utils.parseJson
 import io.vertx.core.Future
 import io.vertx.core.Vertx
-import io.vertx.kotlin.coroutines.await
 import io.vertx.kotlin.mysqlclient.mySQLConnectOptionsOf
 import io.vertx.kotlin.sqlclient.poolOptionsOf
 import io.vertx.mysqlclient.MySQLConnectOptions
