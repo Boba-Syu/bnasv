@@ -3,6 +3,7 @@ package cn.bobasyu.databeses
 import cn.bobasyu.utils.parseJson
 import io.vertx.core.Future
 import io.vertx.core.Vertx
+import io.vertx.kotlin.coroutines.await
 import io.vertx.kotlin.mysqlclient.mySQLConnectOptionsOf
 import io.vertx.kotlin.sqlclient.poolOptionsOf
 import io.vertx.mysqlclient.MySQLConnectOptions
@@ -44,12 +45,11 @@ class MySqlClient(
                 .onFailure { throw it }
         }
 
-    fun insert(sql: String, insertData: List<Tuple>): Future<Unit> =
+    fun save(sql: String, insertData: List<Tuple>): Future<Unit> =
         sqlPool.withConnection { connection: SqlConnection ->
             connection.preparedQuery(sql)
                 .executeBatch(insertData)
                 .map { }
                 .onFailure { throw it }
         }
-
 }

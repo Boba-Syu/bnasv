@@ -10,7 +10,7 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.launch
 
-open class BaseServiceVerticle : CoroutineVerticle() {
+open class BaseCoroutineVerticle : CoroutineVerticle() {
 
     fun Route.coroutineHandler(fn: suspend (RoutingContext) -> Unit) {
         handler { ctx: RoutingContext ->
@@ -23,9 +23,6 @@ open class BaseServiceVerticle : CoroutineVerticle() {
             launch { fn(buffer) }
         }
     }
-}
-
-open class BaseRepositoryVerticle : CoroutineVerticle() {
 
     suspend fun <T> EventBus.asyncConsumer(address: String, handler: suspend (Message<T>) -> Unit) {
         consumer(address) {
