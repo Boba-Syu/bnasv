@@ -1,8 +1,8 @@
 package cn.bobasyu.user
 
+import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseCoroutineVerticle
 import cn.bobasyu.base.success
-import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
@@ -15,14 +15,11 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.auth.jwt.JWTAuth
-import io.vertx.ext.auth.jwt.JWTAuthOptions
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.BasicAuthHandler
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.await
-import io.vertx.kotlin.ext.auth.jwt.jwtAuthOptionsOf
 
 object UserRepositoryConsumerConstant {
     const val USER_QUERY_EVENT: String = "db.user.query"
@@ -32,16 +29,12 @@ object UserRepositoryConsumerConstant {
 }
 
 class UserVerticle(
+    applicationContext: ApplicationContext,
     private val router: Router,
 ) : BaseCoroutineVerticle() {
-
     private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
-
-    private val provider: JWTAuth by lazy {
-        val jwtAuthOptions: JWTAuthOptions = jwtAuthOptionsOf()
-        JWTAuth.create(vertx, jwtAuthOptions)
-    }
-    private val basicAutHandler by lazy { BasicAuthHandler.create(provider) }
+    private val provider: JWTAuth = applicationContext.jwtAuth.provider
+    private val basicAutHandler = applicationContext.jwtAuth.basicAutHandler
 
     override suspend fun start() {
         setUserRouter()
@@ -89,7 +82,6 @@ class UserVerticle(
 
 
 abstract class AbstractUserRepository : BaseCoroutineVerticle() {
-
     private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
 
     override suspend fun start() {
@@ -114,8 +106,7 @@ fun EventBus.registerCodecs(): EventBus = this
     .registerDefaultCodec(UserInsertDTO::class.java, BaseCodec(UserInsertDTO::class.java))
     .registerDefaultCodec(UserRecord::class.java, BaseCodec(UserRecord::class.java))
 
-
-fun Vertx.deployUserVerticle(mySqlClient: MySqlClient, router: Router): Vertx = this.apply {
-    deployVerticle(UserVerticle(router))
-    deployVerticle(UserRepositoryVerticle(mySqlClient))
+fun Vertx.deployUserVerticle(applicationContext: ApplicationContext, router: Router): Vertx = this.apply {
+    deployVerticle(UserVerticle(applicationContext, router))
+    deployVerticle(UserRepositoryVerticle(applicationContext.mySqlClient))
 }

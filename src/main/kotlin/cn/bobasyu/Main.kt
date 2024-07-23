@@ -1,7 +1,7 @@
 package cn.bobasyu
 
+import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
-import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.user.deployUserVerticle
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
@@ -11,12 +11,12 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 
 class MainVerticle : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
-    private val mySqlClient: MySqlClient by lazy { MySqlClient(vertx) }
+    private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
 
     override suspend fun start() {
         val router = Router.router(vertx)
         router.registerFailureHandler()
-        vertx.deployUserVerticle(mySqlClient, router)
+        vertx.deployUserVerticle(applicationContext, router)
 
         server.requestHandler(router)
             .listen(8080)
@@ -24,7 +24,7 @@ class MainVerticle : CoroutineVerticle() {
     }
 
     override suspend fun stop() {
-        mySqlClient.close()
+        applicationContext.close()
         server.close()
         vertx.close()
     }
