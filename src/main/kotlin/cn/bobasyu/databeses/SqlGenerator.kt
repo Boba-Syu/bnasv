@@ -15,6 +15,7 @@ class SqlGenerator<T : Any>(
     private val resultType: KClass<T>,
 ) {
     private val sql = StringBuilder()
+    private val sqlConditionGenerator by lazy { SqlConditionGenerator(this) }
 
     fun execute(): String = sql.toString()
 
@@ -39,86 +40,8 @@ class SqlGenerator<T : Any>(
     /**
      * 查询语句，默认全部字段
      */
-    fun select() = this.apply { sql.append("select\n\t*\nfrom ${resultType.simpleName!!.camelToSnakeCase()}\n") }
-
-    /**
-     * sql语句中拼接 where，配合 select、update或delete 使用
-     */
-    fun where(): SqlGenerator<T> = this.apply { sql.append("where\n") }
-
-    /**
-     * sql语句中拼接 and，配合 where 使用
-     */
-    fun and(): SqlGenerator<T> = this.apply { sql.append("and\n") }
-
-    /**
-     * sql语句中拼接 or，配合 where 使用
-     */
-    fun or(): SqlGenerator<T> = this.apply { sql.append("or\n") }
-
-    /**
-     * sql语句中拼接 等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> eq(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} = ?\n")
-    }
-
-    /**
-     * sql语句中拼接 不等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> neq(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} != ?\n")
-    }
-
-    /**
-     * sql语句中拼接 大于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> gt(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} > ?\n")
-    }
-
-    /**
-     * sql语句中拼接 小于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> lt(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} < ?\n")
-    }
-
-    /**
-     * sql语句中拼接 大于等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> gte(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} >= ?\n")
-    }
-
-    /**
-     * sql语句中拼接 小于等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> lte(type: KProperty<U>): SqlGenerator<T> = this.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} <= ?\n")
-    }
-
-    /**
-     * sql语句中拼接 模糊查询like 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> like(type: KProperty<U>): SqlGenerator<T> {
-        return this.apply {
-            sql.append("\t${type.name.camelToSnakeCase()} like ?\n")
-        }
+    fun select(): SqlGenerator<T> = this.apply {
+        sql.append("select\n\t*\nfrom ${resultType.simpleName!!.camelToSnakeCase()}\n")
     }
 
     /**
@@ -139,7 +62,7 @@ class SqlGenerator<T : Any>(
         return insert(typeNameList)
     }
 
-    private fun insert(typeNameList: List<String>) = this.apply {
+    private fun insert(typeNameList: List<String>): SqlGenerator<T> = this.apply {
         with(sql) {
             append("insert into ${resultType.simpleName!!.camelToSnakeCase()}(\n")
             typeNameList.forEach { typeName ->
@@ -164,7 +87,7 @@ class SqlGenerator<T : Any>(
      *
      * @param typeList 被更新的字段
      */
-    fun <U> update(vararg typeList: KProperty<U>) = this.apply {
+    fun <U> update(vararg typeList: KProperty<U>): SqlGenerator<T> = this.apply {
         with(sql) {
             append("update ${resultType.simpleName!!.camelToSnakeCase()}\nset\n")
             typeList.forEach { type ->
@@ -180,8 +103,100 @@ class SqlGenerator<T : Any>(
     /**
      * 删除语句
      */
-    fun delete() = this.apply {
+    fun delete(): SqlGenerator<T> = this.apply {
         sql.append("delete from ${resultType.simpleName!!.camelToSnakeCase()}\n")
+    }
+
+    /**
+     * sql语句中拼接 where，配合 select、update或delete 使用
+     */
+    fun where(): SqlConditionGenerator<T> {
+        sql.append("where\n")
+        return sqlConditionGenerator
+    }
+
+    /**
+     * sql语句中拼接 and，配合 where 使用
+     */
+    fun and(): SqlConditionGenerator<T> {
+        sql.append("and\n")
+        return sqlConditionGenerator
+    }
+
+    /**
+     * sql语句中拼接 or，配合 where 使用
+     */
+    fun or(): SqlConditionGenerator<T> {
+        sql.append("or\n")
+        return sqlConditionGenerator
+    }
+
+    class SqlConditionGenerator<T : Any>(
+        private val sqlGenerator: SqlGenerator<T>,
+    ) {
+
+        /**
+         * sql语句中拼接 等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> eq(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} = ?\n")
+        }
+
+        /**
+         * sql语句中拼接 不等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> neq(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} != ?\n")
+        }
+
+        /**
+         * sql语句中拼接 大于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> gt(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} > ?\n")
+        }
+
+        /**
+         * sql语句中拼接 小于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> lt(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} < ?\n")
+        }
+
+        /**
+         * sql语句中拼接 大于等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> gte(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} >= ?\n")
+        }
+
+        /**
+         * sql语句中拼接 小于等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> lte(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} <= ?\n")
+        }
+
+        /**
+         * sql语句中拼接 模糊查询like 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> like(type: KProperty<U>): SqlGenerator<T> = this.sqlGenerator.apply {
+            sql.append("\t${type.name.camelToSnakeCase()} like ?\n")
+        }
     }
 }
 
