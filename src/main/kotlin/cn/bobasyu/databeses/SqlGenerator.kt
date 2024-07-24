@@ -1,6 +1,7 @@
 package cn.bobasyu.databeses
 
 import cn.bobasyu.user.UserRecord
+import cn.bobasyu.utils.camelToSnakeCase
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
@@ -14,10 +15,10 @@ class SqlGenerator<T : Any>(
      */
     private val resultType: KClass<T>,
 ) {
-    internal val sql = StringBuilder()
+    private val sql = StringBuilder()
     private val sqlConditionGenerator by lazy { SqlConditionGenerator(this) }
 
-    fun execute(): String = sql.toString()
+    fun generate(): String = sql.toString()
 
     /**
      * 查询语句
@@ -115,145 +116,105 @@ class SqlGenerator<T : Any>(
         return sqlConditionGenerator
     }
 
-}
+    class SqlConditionGenerator<T : Any>(
+        private val sqlGenerator: SqlGenerator<T>,
+    ) {
+        private val sql: StringBuilder = sqlGenerator.sql
+        private val sqlWhereGenerator by lazy { SqlWhereGenerator(this, sqlGenerator) }
 
+        /**
+         * sql语句中拼接 等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> eq(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} = ?\n")
+            return sqlWhereGenerator
+        }
 
-class SqlConditionGenerator<T : Any> internal constructor(
-    val sqlGenerator: SqlGenerator<T>,
-) {
-    private val sqlWhereGenerator: SqlWhereGenerator<T> by lazy { SqlWhereGenerator(this) }
+        /**
+         * sql语句中拼接 不等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> neq(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} != ?\n")
+            return sqlWhereGenerator
+        }
 
-    /**
-     * sql语句中拼接 等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> eq(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} = ?\n")
+        /**
+         * sql语句中拼接 大于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> gt(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} > ?\n")
+            return sqlWhereGenerator
+        }
+
+        /**
+         * sql语句中拼接 小于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> lt(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} < ?\n")
+            return sqlWhereGenerator
+        }
+
+        /**
+         * sql语句中拼接 大于等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> gte(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} >= ?\n")
+            return sqlWhereGenerator
+        }
+
+        /**
+         * sql语句中拼接 小于等于 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> lte(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} <= ?\n")
+            return sqlWhereGenerator
+        }
+
+        /**
+         * sql语句中拼接 模糊查询like 条件，配合 where 使用
+         *
+         * @param type 查询条件对应的字段类型
+         */
+        fun <U : Any> like(type: KProperty<U>): SqlWhereGenerator<T> {
+            sql.append("\t${type.name.camelToSnakeCase()} like ?\n")
+            return sqlWhereGenerator
+        }
     }
 
-    /**
-     * sql语句中拼接 不等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> neq(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} != ?\n")
+    class SqlWhereGenerator<T : Any>(
+        private val sqlConditionGenerator: SqlConditionGenerator<T>,
+        sqlGenerator: SqlGenerator<T>,
+    ) {
+        private val sql: StringBuilder = sqlGenerator.sql
+
+        /**
+         * sql语句中拼接 and，配合 where 使用
+         */
+        fun and(): SqlConditionGenerator<T> {
+            sql.append("and\n")
+            return sqlConditionGenerator
+        }
+
+        /**
+         * sql语句中拼接 or，配合 where 使用
+         */
+        fun or(): SqlConditionGenerator<T> {
+            sql.append("or\n")
+            return sqlConditionGenerator
+        }
+
+        fun generate() = sql.toString()
     }
-
-    /**
-     * sql语句中拼接 大于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> gt(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} > ?\n")
-    }
-
-    /**
-     * sql语句中拼接 小于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> lt(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} < ?\n")
-    }
-
-    /**
-     * sql语句中拼接 大于等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> gte(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} >= ?\n")
-    }
-
-    /**
-     * sql语句中拼接 小于等于 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> lte(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} <= ?\n")
-    }
-
-    /**
-     * sql语句中拼接 模糊查询like 条件，配合 where 使用
-     *
-     * @param type 查询条件对应的字段类型
-     */
-    fun <U : Any> like(type: KProperty<U>): SqlWhereGenerator<T> = this.sqlWhereGenerator.apply {
-        sql.append("\t${type.name.camelToSnakeCase()} like ?\n")
-    }
-}
-
-class SqlWhereGenerator<T : Any> internal constructor(
-    private val sqlConditionGenerator: SqlConditionGenerator<T>
-) {
-    internal val sql = sqlConditionGenerator.sqlGenerator.sql
-
-    /**
-     * sql语句中拼接 and，配合 where 使用
-     */
-    fun and(): SqlConditionGenerator<T> {
-        sql.append("and\n")
-        return sqlConditionGenerator
-    }
-
-    /**
-     * sql语句中拼接 or，配合 where 使用
-     */
-    fun or(): SqlConditionGenerator<T> {
-        sql.append("or\n")
-        return sqlConditionGenerator
-    }
-
-    fun execute() = sql.toString()
-}
-
-fun String.camelToSnakeCase(): String {
-    return this.replace(Regex("([A-Z])")) { "_${it.groupValues[1].lowercase()}" }
-        .removePrefix("_")
-        .lowercase()
-}
-
-
-fun main() {
-    var sql = SqlGenerator(UserRecord::class)
-        .select(UserRecord::userId, UserRecord::username, UserRecord::password)
-        .where()
-        .lt(UserRecord::userId)
-        .and()
-        .like(UserRecord::username)
-        .or()
-        .eq(UserRecord::password)
-        .execute()
-    println(sql)
-    println("-----")
-    sql = SqlGenerator(UserRecord::class).select().execute()
-    println(sql)
-    println("-----")
-    sql = SqlGenerator(UserRecord::class).insert().execute()
-    println(sql)
-    println("-----")
-    sql = SqlGenerator(UserRecord::class)
-        .update(UserRecord::username)
-        .where()
-        .gte(UserRecord::userId)
-        .execute()
-    println(sql)
-    println("-----")
-    sql = SqlGenerator(UserRecord::class)
-        .delete()
-        .where()
-        .lte(UserRecord::userId)
-        .or()
-        .neq(UserRecord::userId)
-        .or()
-        .gt(UserRecord::userId)
-        .or()
-        .like(UserRecord::username)
-        .execute()
-    println(sql)
-    println("-----")
 }

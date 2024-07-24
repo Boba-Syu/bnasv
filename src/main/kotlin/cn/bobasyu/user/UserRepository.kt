@@ -15,7 +15,7 @@ class UserRepositoryVerticle(
 ) : AbstractUserRepository() {
 
     override suspend fun handleQueryUserListEvent(message: Message<Unit>) {
-        val queryListSql: String = SqlGenerator(UserRecord::class).select().execute()
+        val queryListSql: String = SqlGenerator(UserRecord::class).select().generate()
         mySqlClient.query(queryListSql, UserRecord::class.java)
             .onSuccess { userList: List<UserRecord> -> message.reply(userList) }
             .onFailure { message.fail(500, it.message) }
@@ -24,7 +24,7 @@ class UserRepositoryVerticle(
     override suspend fun handleQueryUserByIdEvent(message: Message<Int>) {
         val queryByUserIdSql:String = SqlGenerator(UserRecord::class).select()
             .where().eq(UserRecord::userId)
-            .execute()
+            .generate()
         val condition: List<Tuple> = listOf(Tuple.of(message.body()))
         mySqlClient.queryByConditions(queryByUserIdSql, condition, UserRecord::class.java)
             .onSuccess { userRecordList: List<UserRecord> ->
@@ -39,7 +39,7 @@ class UserRepositoryVerticle(
         val userInsertDTO: UserInsertDTO = message.body()
         val insertSql: String = SqlGenerator(UserRecord::class)
             .insert(UserRecord::username, UserRecord::password)
-            .execute()
+            .generate()
         val condition: List<Tuple> = listOf(
             Tuple.of(userInsertDTO.username, userInsertDTO.password)
         )
@@ -52,7 +52,7 @@ class UserRepositoryVerticle(
         val queryUserByUsernameAndPasswordSql:String = SqlGenerator(UserRecord::class).select()
             .where().eq(UserRecord::username)
             .and().eq(UserRecord::password)
-            .execute()
+            .generate()
         val condition: List<Tuple> = listOf(
             Tuple.of(userLoginDTO.userName, userLoginDTO.password)
         )
