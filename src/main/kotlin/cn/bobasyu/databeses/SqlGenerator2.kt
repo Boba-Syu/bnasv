@@ -3,6 +3,14 @@ package cn.bobasyu.databeses
 import cn.bobasyu.databeses.InsertGenerator.get
 import cn.bobasyu.databeses.InsertGenerator.insertInto
 import cn.bobasyu.databeses.InsertGenerator.values
+import cn.bobasyu.databeses.SelectGenerator.and
+import cn.bobasyu.databeses.SelectGenerator.eq
+import cn.bobasyu.databeses.SelectGenerator.from
+import cn.bobasyu.databeses.SelectGenerator.like
+import cn.bobasyu.databeses.SelectGenerator.or
+import cn.bobasyu.databeses.SelectGenerator.orderBy
+import cn.bobasyu.databeses.SelectGenerator.select
+import cn.bobasyu.databeses.SelectGenerator.where
 import cn.bobasyu.user.UserRecord
 import cn.bobasyu.utils.camelToSnakeCase
 import kotlin.reflect.KClass
@@ -25,14 +33,13 @@ object SelectGenerator {
 
     fun select(vararg fn: SqlElement): String = with(StringBuilder()) {
         append("SELECT ")
-
         fn.forEach { append(it()) }
         toString()
     }
 
     infix fun List<KProperty<*>>.from(tableName: KClass<*>): SqlElement {
-        val stringBuilder = StringBuilder()
         return {
+            val stringBuilder = StringBuilder()
             this.forEach { property ->
                 stringBuilder.append(property.name.camelToSnakeCase())
                 when {
@@ -40,8 +47,8 @@ object SelectGenerator {
                     else -> stringBuilder.append(" ")
                 }
             }
-            stringBuilder.append(" FROM ${tableName.simpleName!!.camelToSnakeCase()} ")
-            toString()
+            stringBuilder.append("FROM ${tableName.simpleName!!.camelToSnakeCase()} ")
+            stringBuilder.toString()
         }
     }
 
@@ -156,6 +163,25 @@ fun main() {
             listOf(1, "abc1", "abc2"),
             listOf(2, "def1", "def2"),
         )
+    )
+    println(sql)
+    sql = select(
+        UserRecord::class,
+        where(
+            eq(UserRecord::userId, 1)
+                    and like(UserRecord::username, "123")
+        ),
+        orderBy(UserRecord::userId, Order.ASC)
+    )
+    println(sql)
+    sql = select(
+        listOf(UserRecord::userId, UserRecord::username, UserRecord::password) from UserRecord::class,
+        where(
+            eq(UserRecord::userId, 1)
+                    and like(UserRecord::username, "123")
+                    or eq(UserRecord::password, "abc")
+        ),
+        orderBy(UserRecord::userId, Order.ASC)
     )
     println(sql)
 }
