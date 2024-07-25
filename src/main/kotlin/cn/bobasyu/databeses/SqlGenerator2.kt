@@ -53,7 +53,7 @@ object SelectGenerator {
     }
 
 
-    fun where(condition: SqlElement): SqlElement = { "WHERE ${condition()} " }
+    fun where(condition: SqlElement): SqlElement = { "WHERE ${condition()}" }
 
     inline fun <reified T : Any> eq(column: KProperty<T>, value: T): SqlElement {
         return { "${column.name.camelToSnakeCase()} = '$value' " }
