@@ -1,10 +1,13 @@
 package cn.bobasyu.databeses
 
-import cn.bobasyu.user.UserRecord
 import cn.bobasyu.utils.camelToSnakeCase
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
+
+enum class Order(val value: String) {
+    ASC("ASC"), DESC("DESC")
+}
 
 /**
  * SQL语句生成
@@ -195,7 +198,7 @@ class SqlGenerator<T : Any>(
 
     class SqlWhereGenerator<T : Any>(
         private val sqlConditionGenerator: SqlConditionGenerator<T>,
-        sqlGenerator: SqlGenerator<T>,
+        private val sqlGenerator: SqlGenerator<T>,
     ) {
         private val sql: StringBuilder = sqlGenerator.sql
 
@@ -214,6 +217,17 @@ class SqlGenerator<T : Any>(
             sql.append("or\n")
             return sqlConditionGenerator
         }
+
+        fun <U : Any> orderBy(type: KProperty<U>, order: Order): SqlEndGenerator {
+            sql.append("order by ${type.name.camelToSnakeCase()} ${order.value}\n")
+            return SqlEndGenerator(sqlGenerator)
+        }
+
+        fun generate() = sql.toString()
+    }
+
+    class SqlEndGenerator(sqlGenerator: SqlGenerator<*>) {
+        private val sql: StringBuilder = sqlGenerator.sql
 
         fun generate() = sql.toString()
     }
