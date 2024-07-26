@@ -1,16 +1,24 @@
 package cn.bobasyu.databeses
 
+import cn.bobasyu.databeses.DeleteGenerator.delete
 import cn.bobasyu.databeses.InsertGenerator.get
 import cn.bobasyu.databeses.InsertGenerator.insertInto
 import cn.bobasyu.databeses.InsertGenerator.values
-import cn.bobasyu.databeses.SelectGenerator.and
-import cn.bobasyu.databeses.SelectGenerator.eq
 import cn.bobasyu.databeses.SelectGenerator.from
-import cn.bobasyu.databeses.SelectGenerator.like
-import cn.bobasyu.databeses.SelectGenerator.or
-import cn.bobasyu.databeses.SelectGenerator.orderBy
 import cn.bobasyu.databeses.SelectGenerator.select
-import cn.bobasyu.databeses.SelectGenerator.where
+import cn.bobasyu.databeses.UpdateGenerator.set
+import cn.bobasyu.databeses.UpdateGenerator.update
+import cn.bobasyu.databeses.WhereGenerator.and
+import cn.bobasyu.databeses.WhereGenerator.eq
+import cn.bobasyu.databeses.WhereGenerator.gt
+import cn.bobasyu.databeses.WhereGenerator.gte
+import cn.bobasyu.databeses.WhereGenerator.like
+import cn.bobasyu.databeses.WhereGenerator.lt
+import cn.bobasyu.databeses.WhereGenerator.lte
+import cn.bobasyu.databeses.WhereGenerator.neq
+import cn.bobasyu.databeses.WhereGenerator.or
+import cn.bobasyu.databeses.WhereGenerator.orderBy
+import cn.bobasyu.databeses.WhereGenerator.where
 import cn.bobasyu.user.UserRecord
 import cn.bobasyu.utils.camelToSnakeCase
 import kotlin.reflect.KClass
@@ -22,36 +30,7 @@ import kotlin.reflect.KProperty
 typealias SqlElement = () -> String
 
 
-object SelectGenerator {
-
-    fun <T : Any> select(type: KClass<T>, vararg fn: SqlElement): String = with(StringBuilder()) {
-        append("SELECT * ")
-        append("FROM ${type.simpleName!!.camelToSnakeCase()} ")
-        fn.forEach { append(it()) }
-        toString()
-    }
-
-    fun select(vararg fn: SqlElement): String = with(StringBuilder()) {
-        append("SELECT ")
-        fn.forEach { append(it()) }
-        toString()
-    }
-
-    infix fun List<KProperty<*>>.from(tableName: KClass<*>): SqlElement {
-        return {
-            val stringBuilder = StringBuilder()
-            this.forEach { property ->
-                stringBuilder.append(property.name.camelToSnakeCase())
-                when {
-                    property != this.last() -> stringBuilder.append(", ")
-                    else -> stringBuilder.append(" ")
-                }
-            }
-            stringBuilder.append("FROM ${tableName.simpleName!!.camelToSnakeCase()} ")
-            stringBuilder.toString()
-        }
-    }
-
+object WhereGenerator {
 
     fun where(condition: SqlElement): SqlElement = { "WHERE ${condition()}" }
 
@@ -92,17 +71,52 @@ object SelectGenerator {
     infix fun SqlElement.or(other: SqlElement): SqlElement = { "${this()}OR ${other()}" }
 }
 
+object SelectGenerator {
+
+    fun <T : Any> select(type: KClass<T>, vararg fn: SqlElement): String = with(StringBuilder()) {
+        append("SELECT * ")
+        append("FROM ${type.simpleName!!.camelToSnakeCase()} ")
+        fn.forEach { append(it()) }
+        append(";")
+        toString()
+    }
+
+    fun select(vararg fn: SqlElement): String = with(StringBuilder()) {
+        append("SELECT ")
+        fn.forEach { append(it()) }
+        append(";")
+        toString()
+    }
+
+    infix fun List<KProperty<*>>.from(tableName: KClass<*>): SqlElement {
+        return {
+            val stringBuilder = StringBuilder()
+            this.forEach { property ->
+                stringBuilder.append(property.name.camelToSnakeCase())
+                when {
+                    property != this.last() -> stringBuilder.append(", ")
+                    else -> stringBuilder.append(" ")
+                }
+            }
+            stringBuilder.append("FROM ${tableName.simpleName!!.camelToSnakeCase()} ")
+            stringBuilder.toString()
+        }
+    }
+}
+
 object InsertGenerator {
 
     fun <T : Any> insertInto(type: KClass<T>, vararg fn: SqlElement): String = with(StringBuilder()) {
         append("INSERT INTO ${type.simpleName!!.camelToSnakeCase()} ")
         fn.forEach { append(it()) }
+        append(";")
         toString()
     }
 
     fun insertInto(vararg fn: SqlElement): String = with(StringBuilder()) {
         append("INSERT INTO ")
         fn.forEach { append(it()) }
+        append(";")
         toString()
     }
 
@@ -113,7 +127,7 @@ object InsertGenerator {
                 saveValues.forEach { list: List<Any> ->
                     append("(")
                     list.forEach {
-                        append(it.toString())
+                        append("'$it'")
                         when {
                             it != list.last() -> append(", ")
                             else -> append(")")
@@ -147,6 +161,38 @@ object InsertGenerator {
     }
 }
 
+object UpdateGenerator {
+    fun <T : Any> update(type: KClass<T>, vararg fn: SqlElement): String = with(StringBuilder()) {
+        append("UPDATE ${type.simpleName!!.camelToSnakeCase()} ")
+        fn.forEach { append(it()) }
+        append(";")
+        toString()
+    }
+
+    fun <T> set(vararg pairs: Pair<KProperty<T>, T>): SqlElement {
+        return {
+            StringBuilder().apply {
+                append("SET ")
+                pairs.forEach { pair ->
+                    append("${pair.first.name.camelToSnakeCase()} = '${pair.second}'")
+                    when {
+                        pair != pairs.last() -> append(", ")
+                        else -> append(" ")
+                    }
+                }
+            }.toString()
+        }
+    }
+}
+
+object DeleteGenerator {
+    fun <T : Any> delete(type: KClass<T>, vararg fn: SqlElement): String = with(StringBuilder()) {
+        append("DELETE FROM ${type.simpleName!!.camelToSnakeCase()} ")
+        fn.forEach { append(it()) }
+        append(";")
+        toString()
+    }
+}
 
 fun main() {
     var sql = insertInto(
@@ -182,6 +228,27 @@ fun main() {
                     or eq(UserRecord::password, "abc")
         ),
         orderBy(UserRecord::userId, Order.ASC)
+    )
+    println(sql)
+    sql = update(
+        UserRecord::class,
+        set(
+            UserRecord::username to "123",
+            UserRecord::password to "abc",
+        ),
+        where(
+            neq(UserRecord::userId, 1)
+                    and gt(UserRecord::username, "123")
+                    or lt(UserRecord::password, "abc")
+        )
+    )
+    println(sql)
+    sql = delete(
+        UserRecord::class,
+        where(
+            gte(UserRecord::username, "123")
+                    or lte(UserRecord::password, "abc")
+        )
     )
     println(sql)
 }
