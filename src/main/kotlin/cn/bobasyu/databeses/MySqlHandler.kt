@@ -12,6 +12,7 @@ import io.vertx.sqlclient.Row
 import io.vertx.sqlclient.RowSet
 import io.vertx.sqlclient.SqlConnection
 import io.vertx.sqlclient.Tuple
+import kotlin.reflect.KClass
 
 /**
  * 基于vertx-mysql的数据库配置和操作封装
@@ -50,7 +51,7 @@ class MySqlClient(
     /**
      * 条件查询方法
      */
-    inline fun <reified T> queryByConditions(sql: String, conditions: List<Tuple>, resultType: Class<T>): Future<List<T>> =
+    fun  queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<out Any>> =
         sqlPool.withConnection { it.queryByConditions(sql, conditions, resultType) }
 
     /**
@@ -78,11 +79,11 @@ inline fun <reified T> SqlConnection.query(sql: String, resultType: Class<T>): F
 /**
  * 条件查询方法，可在事务中使用
  */
-inline fun <reified T> SqlConnection.queryByConditions(sql: String, conditions: List<Tuple>, resultType: Class<T>): Future<List<T>> {
+fun SqlConnection.queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<out Any>> {
     return preparedQuery(sql)
         .executeBatch(conditions)
         .map { rowSet ->
-            rowSet.map { it.toJson().toString().parseJson(resultType) }
+            rowSet.map { it.toJson().toString().parseJson(resultType.java) }
         }.onFailure { throw it }
 }
 

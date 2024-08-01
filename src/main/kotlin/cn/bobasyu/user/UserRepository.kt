@@ -22,45 +22,38 @@ class UserRepositoryVerticle(
     }
 
     override suspend fun handleQueryUserByIdEvent(message: Message<Int>) {
-        val queryByUserIdSql:String = SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::userId)
-            .generate()
-        val condition: List<Tuple> = listOf(Tuple.of(message.body()))
-        mySqlClient.queryByConditions(queryByUserIdSql, condition, UserRecord::class.java)
-            .onSuccess { userRecordList: List<UserRecord> ->
-                if (userRecordList.isEmpty()) {
+        SqlGenerator(UserRecord::class).select()
+            .where().eq(UserRecord::userId, message.body())
+            .execute(mySqlClient)
+            .onSuccess { userRecordList ->
+                if ((userRecordList as List<*>).isEmpty()) {
                     throw NoSuchRecordInDatabaseException()
                 }
                 message.reply(userRecordList.first())
             }.onFailure { message.fail(500, it.message) }
+
     }
 
     override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
         val userInsertDTO: UserInsertDTO = message.body()
-        val insertSql: String = SqlGenerator(UserRecord::class)
+        SqlGenerator(UserRecord::class)
             .insert(UserRecord::username, UserRecord::password)
-            .generate()
-        val condition: List<Tuple> = listOf(
-            Tuple.of(userInsertDTO.username, userInsertDTO.password)
-        )
-        mySqlClient.save(insertSql, condition)
+            .execute(mySqlClient)
             .onFailure { message.fail(500, it.message) }
+
     }
 
     override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) {
         val userLoginDTO: UserLoginDTO = message.body()
-        val queryUserByUsernameAndPasswordSql:String = SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::username)
-            .and().eq(UserRecord::password)
-            .generate()
-        val condition: List<Tuple> = listOf(
-            Tuple.of(userLoginDTO.userName, userLoginDTO.password)
-        )
-        mySqlClient.queryByConditions(queryUserByUsernameAndPasswordSql, condition, UserRecord::class.java)
-            .onSuccess { userList: List<UserRecord> ->
-                if (userList.isEmpty()) {
+        SqlGenerator(UserRecord::class).select()
+            .where().eq(UserRecord::username, userLoginDTO.userName)
+            .and().eq(UserRecord::password, userLoginDTO.password)
+            .execute(mySqlClient)
+            .onSuccess { userList ->
+                if ((userList as List<*>).isEmpty()) {
                     throw NoSuchRecordInDatabaseException()
                 }
             }.onFailure { message.fail(500, it.message) }
+
     }
 }
