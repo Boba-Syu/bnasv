@@ -37,6 +37,7 @@ class UserRepositoryVerticle(
         val userInsertDTO: UserInsertDTO = message.body()
         SqlGenerator(UserRecord::class)
             .insert(UserRecord::username, UserRecord::password)
+            .values(userInsertDTO.username, userInsertDTO.password)
             .execute(mySqlClient)
             .onFailure { message.fail(500, it.message) }
 

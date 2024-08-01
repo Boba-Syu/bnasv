@@ -231,7 +231,7 @@ class SqlGenerator(
     class SqlWhereGenerator(
         private val sqlConditionGenerator: SqlConditionGenerator,
         private val sqlGenerator: SqlGenerator,
-    ) {
+    ) : SqlEndGenerator(sqlGenerator) {
         private val sql: StringBuilder = sqlGenerator.sql
 
         /**
@@ -254,13 +254,11 @@ class SqlGenerator(
             sql.append("order by ${type.name.camelToSnakeCase()} ${order.value}\n")
             return SqlEndGenerator(sqlGenerator)
         }
-
-        fun generate(): String = sqlGenerator.generate()
-
-        fun execute(mySqlClient: MySqlClient): Future<out Any> = sqlGenerator.execute(mySqlClient)
     }
 
-    class SqlInsertGenerator(private val sqlGenerator: SqlGenerator) {
+    class SqlInsertGenerator(
+        private val sqlGenerator: SqlGenerator
+    ) : SqlEndGenerator(sqlGenerator) {
         fun values(vararg values: Any): SqlInsertGenerator = this.apply {
             with(sqlGenerator.sql) {
                 append("(")
@@ -276,7 +274,7 @@ class SqlGenerator(
         }
     }
 
-    class SqlEndGenerator(
+    open class SqlEndGenerator(
         private val sqlGenerator: SqlGenerator
     ) {
         private val sql: StringBuilder = sqlGenerator.sql
