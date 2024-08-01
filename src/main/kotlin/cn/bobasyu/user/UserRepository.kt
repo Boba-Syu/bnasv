@@ -4,7 +4,6 @@ import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.databeses.SqlGenerator
 import io.vertx.core.eventbus.Message
-import io.vertx.sqlclient.Tuple
 
 
 /**

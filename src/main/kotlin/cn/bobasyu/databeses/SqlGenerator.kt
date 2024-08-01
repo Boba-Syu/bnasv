@@ -73,7 +73,7 @@ class SqlGenerator(
      *
      * @param typeList 被插入的字段
      */
-    fun <U : Any> insert(vararg typeList: KProperty<U>): SqlGenerator {
+    fun <U : Any> insert(vararg typeList: KProperty<U>): SqlInsertGenerator {
         generateType = GenerateType.INSERT
         val typeNameList: List<String> = typeList.map { it.name.camelToSnakeCase() }
         return insert(typeNameList)
@@ -82,12 +82,12 @@ class SqlGenerator(
     /**
      * 插入语句，默认全部字段
      */
-    fun insert(): SqlGenerator {
-        val typeNameList: List<String> = resultType.memberProperties.map { it.name }
+    fun insert(): SqlInsertGenerator {
+        val typeNameList: List<String> = resultType.memberProperties.map { it.name.camelToSnakeCase() }
         return insert(typeNameList)
     }
 
-    private fun insert(typeNameList: List<String>): SqlGenerator = this.apply {
+    private fun insert(typeNameList: List<String>): SqlInsertGenerator {
         generateType = GenerateType.INSERT
         with(sql) {
             append("insert into ${resultType.simpleName!!.camelToSnakeCase()}(\n")
@@ -106,6 +106,7 @@ class SqlGenerator(
             }
             append("\n)")
         }
+        return SqlInsertGenerator(this)
     }
 
     /**
@@ -257,6 +258,22 @@ class SqlGenerator(
         fun generate(): String = sqlGenerator.generate()
 
         fun execute(mySqlClient: MySqlClient): Future<out Any> = sqlGenerator.execute(mySqlClient)
+    }
+
+    class SqlInsertGenerator(private val sqlGenerator: SqlGenerator) {
+        fun values(vararg values: Any): SqlInsertGenerator = this.apply {
+            with(sqlGenerator.sql) {
+                append("(")
+                values.forEach { value ->
+                    sqlGenerator.params.add(value)
+                    append("?")
+                    if (value != values.last()) {
+                        append(",")
+                    }
+                }
+                append(")\n")
+            }
+        }
     }
 
     class SqlEndGenerator(
