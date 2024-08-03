@@ -23,7 +23,7 @@ open class BaseCoroutineVerticle : CoroutineVerticle() {
      */
     fun Route.coroutineHandler(fn: suspend (RoutingContext) -> Unit) {
         handler { ctx: RoutingContext ->
-            launch(ctx.vertx().dispatcher()) {
+            launch(vertx.dispatcher()) {
                 try {
                     fn(ctx)
                 } catch (e: Exception) {
@@ -37,9 +37,16 @@ open class BaseCoroutineVerticle : CoroutineVerticle() {
     /**
      * 以协程方式对http请求体进行处理方法
      */
-    fun HttpServerRequest.asyncRequestBodyHandler(fn: suspend (Buffer) -> Unit) {
+    fun HttpServerRequest.asyncRequestBodyHandler(ctx: RoutingContext, fn: suspend (Buffer) -> Unit) {
         bodyHandler { buffer: Buffer ->
-            launch { fn(buffer) }
+            launch(vertx.dispatcher()) {
+                try {
+                    fn(buffer)
+                } catch (e: Exception) {
+                    logger.error(e.message, e)
+                    ctx.response().end(failure(e).toJson())
+                }
+            }
         }
     }
 
@@ -51,4 +58,5 @@ open class BaseCoroutineVerticle : CoroutineVerticle() {
             launch(vertx.dispatcher()) { handler(it) }
         }
     }
+
 }

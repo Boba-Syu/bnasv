@@ -8,6 +8,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
 import io.vertx.kotlin.coroutines.CoroutineVerticle
+import org.slf4j.LoggerFactory
 
 /**
  * MainVerticle 注册全部服务
@@ -16,6 +17,10 @@ class MainVerticle : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
     private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
 
+    companion object {
+        val logger = LoggerFactory.getLogger(MainVerticle::class.java)
+    }
+
     override suspend fun start() {
         val router = Router.router(vertx)
         router.registerFailureHandler()
@@ -23,7 +28,7 @@ class MainVerticle : CoroutineVerticle() {
 
         server.requestHandler(router)
             .listen(8080)
-            .onSuccess { println("server start succeed.") }
+            .onSuccess { logger.info("server start succeed.") }
     }
 
     override suspend fun stop() {

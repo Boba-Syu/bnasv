@@ -13,11 +13,11 @@ open class BaseException(
  * 数据库为查询到数据异常封装
  */
 class NoSuchRecordInDatabaseException(
-    message: String = "No such record in database.",
+    message: String = "",
     cause: Throwable? = null
-) : BaseException(ResultCode.INTERNAL_ERROR.code, message, cause)
+) : BaseException(ResultCode.INTERNAL_ERROR.code, "No such record in database.$message", cause)
 
 class UnauthorizedException(
-    message: String = "Unauthorized.",
+    message: String = "",
     cause: Throwable? = null
-) : BaseException(ResultCode.UNAUTHORIZED.code, message, cause)
+) : BaseException(ResultCode.UNAUTHORIZED.code, "Unauthorized.$message", cause)

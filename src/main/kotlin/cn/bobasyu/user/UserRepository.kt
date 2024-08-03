@@ -1,9 +1,11 @@
 package cn.bobasyu.user
 
+import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.databeses.SqlGenerator
-import io.vertx.core.eventbus.Message
+import io.vertx.core.Future
+import io.vertx.kotlin.coroutines.await
 
 
 /**
@@ -13,47 +15,59 @@ class UserRepositoryVerticle(
     private val mySqlClient: MySqlClient,
 ) : AbstractUserRepository() {
 
-    override suspend fun handleQueryUserListEvent(message: Message<Unit>) {
+    override suspend fun queryUserList(): Future<List<UserRecord>> {
         val queryListSql: String = SqlGenerator(UserRecord::class).select().generate()
-        mySqlClient.query(queryListSql, UserRecord::class.java)
-            .onSuccess { userList: List<UserRecord> -> message.reply(userList) }
-            .onFailure { message.fail(500, it.message) }
+        return mySqlClient.query(queryListSql, UserRecord::class.java)
     }
 
-    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) {
-        SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::userId, message.body())
+    override suspend fun queryUserById(id: Int): Future<UserRecord> {
+        return SqlGenerator(UserRecord::class)
+            .select()
+            .where().eq(UserRecord::userId, id)
             .execute(mySqlClient)
-            .onSuccess { userRecordList ->
-                if ((userRecordList as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException()
+            .map {
+                if ((it as List<*>).isEmpty()) {
+                    throw NoSuchRecordInDatabaseException("id: $id")
                 }
-                message.reply(userRecordList.first())
-            }.onFailure { message.fail(500, it.message) }
+                it.first()
+            }
+            .map { it as UserRecord }
     }
 
-    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
-        val userInsertDTO: UserInsertDTO = message.body()
-        SqlGenerator(UserRecord::class)
-            .insert(UserRecord::username, UserRecord::password)
-            .values(userInsertDTO.username, userInsertDTO.password)
+    override suspend fun queryUserByUsername(username: String): Future<UserRecord> {
+        return SqlGenerator(UserRecord::class)
+            .select()
+            .where().eq(UserRecord::username, username)
             .execute(mySqlClient)
-            .onSuccess { message.reply("success") }
-            .onFailure { message.fail(500, it.message) }
-
+            .map {
+                if ((it as List<*>).isEmpty()) {
+                    throw NoSuchRecordInDatabaseException("username: $username")
+                }
+                it.first()
+            }
+            .map { it as UserRecord }
     }
 
-    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) {
-        val userLoginDTO: UserLoginDTO = message.body()
-        SqlGenerator(UserRecord::class).select()
+
+    override suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit> {
+        try {
+            queryUserByUsername(userInsertDTO.username).await()
+            throw BaseException(message = "username${userInsertDTO.username} is existed")
+        } catch (_: NoSuchRecordInDatabaseException) {
+            return SqlGenerator(UserRecord::class)
+                .insert(UserRecord::username, UserRecord::password)
+                .values(userInsertDTO.username, userInsertDTO.password)
+                .execute(mySqlClient)
+                .map {}
+        }
+    }
+
+
+    override suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
+        return SqlGenerator(UserRecord::class).select()
             .where().eq(UserRecord::username, userLoginDTO.userName)
             .and().eq(UserRecord::password, userLoginDTO.password)
             .execute(mySqlClient)
-            .onSuccess { userList ->
-                if ((userList as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException()
-                }
-            }.onFailure { message.fail(500, it.message) }
-
+            .map { it as UserRecord }
     }
 }
