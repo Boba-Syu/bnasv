@@ -26,6 +26,6 @@ data class UserInsertDTO(
  * 用户登录参数封装
  */
 data class UserLoginDTO(
-    val userName: Int,
+    val username: String,
     val password: String,
 )

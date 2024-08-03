@@ -24,7 +24,7 @@ data class HttpResult<T>(
 
 fun <T> success(data: T): HttpResult<T> = HttpResult(code = ResultCode.SUCCESS.code, data = data)
 
-fun success(): HttpResult<Unit> = HttpResult(code = ResultCode.SUCCESS.code)
+fun success(): HttpResult<Unit> = HttpResult(code = ResultCode.SUCCESS.code, message = "success")
 
 fun failure(message: String?): HttpResult<Unit> = HttpResult(code = ResultCode.INTERNAL_ERROR.code, message = message)
 

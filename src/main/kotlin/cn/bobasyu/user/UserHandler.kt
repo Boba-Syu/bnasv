@@ -38,9 +38,10 @@ class UserVerticle(
      */
     private suspend fun setUserRouter() = with(router) {
         post("/login").coroutineHandler { loginHandler(it) }
-        post("/user/register").coroutineHandler { queryRegisterHandler(it) }
+        post("/register").coroutineHandler { queryRegisterHandler(it) }
 
-        get("/user/query/id/:id")//.handler(basicAutHandler)
+        get("/user")
+//            .handler(basicAutHandler)
             .coroutineHandler { queryByIdHandler(it) }
     }
 
@@ -62,7 +63,7 @@ class UserVerticle(
     }
 
     private suspend fun queryByIdHandler(ctx: RoutingContext) {
-        val userId: Int = ctx.pathParam("id").toInt()
+        val userId: Int = ctx.request().getParam("id").toInt()
         val userRecord = userRepository.queryUserById(userId).await()
         ctx.response().end(success(userRecord).toJson())
     }

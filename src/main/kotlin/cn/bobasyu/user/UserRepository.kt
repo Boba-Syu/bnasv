@@ -65,9 +65,14 @@ class UserRepositoryVerticle(
 
     override suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
         return SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::username, userLoginDTO.userName)
+            .where().eq(UserRecord::username, userLoginDTO.username)
             .and().eq(UserRecord::password, userLoginDTO.password)
             .execute(mySqlClient)
-            .map { it as UserRecord }
+            .map {
+                if ((it as List<*>).isEmpty()) {
+                    throw BaseException(message = "username or password error")
+                }
+                it.first()
+            }.map { it as UserRecord }
     }
 }
