@@ -30,7 +30,6 @@ class UserRepositoryVerticle(
                 }
                 message.reply(userRecordList.first())
             }.onFailure { message.fail(500, it.message) }
-
     }
 
     override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
@@ -39,6 +38,7 @@ class UserRepositoryVerticle(
             .insert(UserRecord::username, UserRecord::password)
             .values(userInsertDTO.username, userInsertDTO.password)
             .execute(mySqlClient)
+            .onSuccess { message.reply("success") }
             .onFailure { message.fail(500, it.message) }
 
     }

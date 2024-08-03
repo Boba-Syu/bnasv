@@ -1,6 +1,7 @@
 package cn.bobasyu.user
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.time.LocalDateTime
 
 /**
  * 数据库查询结果封装实体类
@@ -9,6 +10,8 @@ data class UserRecord(
     @JsonProperty("user_id") val userId: Int,
     @JsonProperty("username") val username: String,
     @JsonProperty("password") val password: String,
+    @JsonProperty("create_time") val createTime: LocalDateTime,
+    @JsonProperty("update_time") val updateTime: LocalDateTime
 )
 
 /**

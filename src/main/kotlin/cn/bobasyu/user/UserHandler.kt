@@ -2,6 +2,7 @@ package cn.bobasyu.user
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseCoroutineVerticle
+import cn.bobasyu.base.failure
 import cn.bobasyu.base.success
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
@@ -64,7 +65,8 @@ class UserVerticle(
         post("/login").coroutineHandler { loginHandler(it) }
         post("/user/register").coroutineHandler { queryRegisterHandler(it) }
 
-        get("/user/query/id/:id").handler(basicAutHandler).coroutineHandler { queryByIdHandler(it) }
+        get("/user/query/id/:id")//.handler(basicAutHandler)
+            .coroutineHandler { queryByIdHandler(it) }
     }
 
     private suspend fun loginHandler(ctx: RoutingContext) {
@@ -81,7 +83,7 @@ class UserVerticle(
                     "username" to userRecord.username
                 }
             })
-            ctx.response().end(success().toString())
+            ctx.response().end(success().toJson())
         }
     }
 
@@ -95,7 +97,9 @@ class UserVerticle(
         ctx.request().asyncRequestBodyHandler { body: Buffer ->
             val json = body.toString()
             val userInsertDTO: UserInsertDTO = json.parseJson(UserInsertDTO::class.java)
-            eventBus.request<Unit>(USER_INSERT_EVENT, userInsertDTO).await()
+            eventBus.request<String>(USER_INSERT_EVENT, userInsertDTO)
+                .onSuccess { ctx.response().end(success().toJson()) }
+                .onFailure { ctx.response().end(failure(it.message).toJson()) }
         }
     }
 }
@@ -104,7 +108,7 @@ class UserVerticle(
  * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
  */
 abstract class AbstractUserRepository : BaseCoroutineVerticle() {
-    private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
+    private val eventBus: EventBus by lazy { vertx.eventBus() }
 
     override suspend fun start() {
         registerConsumer()

@@ -1,12 +1,20 @@
 package cn.bobasyu.utils
 
 import cn.bobasyu.utils.ObjectJson.objectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageCodec
+import java.text.SimpleDateFormat
+
 
 object ObjectJson {
-    val objectMapper = jacksonObjectMapper()
+    val objectMapper by lazy {
+        val mapper = jacksonObjectMapper()
+        mapper.setDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+        mapper.registerModule(JavaTimeModule())
+        mapper
+    }
 }
 
 /**

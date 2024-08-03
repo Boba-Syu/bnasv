@@ -3,6 +3,8 @@ package cn.bobasyu.databeses
 import cn.bobasyu.utils.camelToSnakeCase
 import io.vertx.core.Future
 import io.vertx.sqlclient.Tuple
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
@@ -29,10 +31,15 @@ class SqlGenerator(
     private val params: MutableList<Any> = ArrayList()
     private lateinit var generateType: GenerateType
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SqlGenerator::class.java);
+    }
+
     fun generate(): String = sql.toString()
 
     fun execute(mySqlClient: MySqlClient): Future<out Any> {
         val condition = listOf(Tuple.from(params))
+        log.info("SqlGenerator: sql={}, params={}", sql.toString(), params)
 
         return when (generateType) {
             GenerateType.SELECT -> mySqlClient.queryByConditions(sql.toString(), condition, resultType)
@@ -65,6 +72,7 @@ class SqlGenerator(
      * 查询语句，默认全部字段
      */
     fun select(): SqlGenerator = this.apply {
+        generateType = GenerateType.SELECT
         sql.append("select\n\t*\nfrom ${resultType.simpleName!!.camelToSnakeCase()}\n")
     }
 
@@ -97,14 +105,7 @@ class SqlGenerator(
                     append(",\n")
                 }
             }
-            append("\n) values(\n")
-            for (i in 1..typeNameList.size) {
-                append("\t?")
-                if (i != typeNameList.size) {
-                    append(",\n")
-                }
-            }
-            append("\n)")
+            append("\n) values\n")
         }
         return SqlInsertGenerator(this)
     }
