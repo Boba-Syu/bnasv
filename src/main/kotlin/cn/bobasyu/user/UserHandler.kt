@@ -40,9 +40,8 @@ class UserVerticle(
         post("/login").coroutineHandler { loginHandler(it) }
         post("/register").coroutineHandler { queryRegisterHandler(it) }
 
-        get("/user")
-//            .handler(basicAutHandler)
-            .coroutineHandler { queryByIdHandler(it) }
+//        route("/user/*").handler(basicAutHandler)
+        get("/user").coroutineHandler { queryByIdHandler(it) }
     }
 
     private suspend fun loginHandler(ctx: RoutingContext) {
@@ -52,13 +51,12 @@ class UserVerticle(
             val userRecord: UserRecord = userRepository.queryUserByUsernameAndPassword(userLoginDTO).await()
 
             // 使用jwt做鉴权
-            provider.generateToken(json {
+            ctx.response().end(provider.generateToken(json {
                 obj {
                     "userId" to userRecord.userId
                     "username" to userRecord.username
                 }
-            })
-            ctx.response().end(success().toJson())
+            }))
         }
     }
 
