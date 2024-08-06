@@ -13,7 +13,7 @@ import io.vertx.kotlin.coroutines.await
  */
 class UserRepositoryVerticle(
     private val mySqlClient: MySqlClient,
-) : AbstractUserRepository() {
+) : AbstractUserRepository {
 
     override suspend fun queryUserList(): Future<List<UserRecord>> {
         val queryListSql: String = SqlGenerator(UserRecord::class).select().generate()
