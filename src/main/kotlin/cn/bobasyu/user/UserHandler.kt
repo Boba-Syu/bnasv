@@ -79,16 +79,16 @@ class UserVerticle(
 /**
  * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
  */
-abstract class AbstractUserRepository {
-    abstract suspend fun queryUserList(): Future<List<UserRecord>>
+interface AbstractUserRepository {
+    suspend fun queryUserList(): Future<List<UserRecord>>
 
-    abstract suspend fun queryUserById(id: Int): Future<UserRecord>
+    suspend fun queryUserById(id: Int): Future<UserRecord>
 
-    abstract suspend fun queryUserByUsername(username: String): Future<UserRecord>
+    suspend fun queryUserByUsername(username: String): Future<UserRecord>
 
-    abstract suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit>
+    suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit>
 
-    abstract suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord>
+    suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord>
 }
 
 /**

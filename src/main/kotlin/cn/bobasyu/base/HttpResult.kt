@@ -32,3 +32,6 @@ fun failure(e: Throwable): HttpResult<Unit> = when (e) {
     is BaseException -> HttpResult(code = e.code, message = e.message)
     else -> HttpResult(code = ResultCode.INTERNAL_ERROR.code, message = e.message)
 }
+
+fun notFound(uri: String): HttpResult<Unit> =
+    HttpResult(code = ResultCode.NOT_FOUND.code, message = "not found uri  [${uri}].")

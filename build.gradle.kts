@@ -12,13 +12,17 @@ repositories {
 val vertxVersion = "4.4.0"
 val jacksonVersion = "2.17.2"
 val slf4jVersion = "1.5.6"
+val mockitoVersion = "5.12.0"
 
 dependencies {
     testImplementation(kotlin("test"))
 
+    testImplementation ("io.vertx:vertx-unit:${vertxVersion}")
+    testImplementation ("io.vertx:vertx-junit5:${vertxVersion}")
     implementation("io.vertx:vertx-core:${vertxVersion}")
     implementation("io.vertx:vertx-lang-kotlin:${vertxVersion}")
     implementation("io.vertx:vertx-web:${vertxVersion}")
+    implementation("io.vertx:vertx-web-client:${vertxVersion}")
     implementation("io.vertx:vertx-auth-jwt:${vertxVersion}")
     implementation("io.vertx:vertx-auth-common:${vertxVersion}")
     implementation("io.vertx:vertx-lang-kotlin-coroutines:${vertxVersion}")
@@ -29,6 +33,8 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}")
 
     implementation("org.slf4j:slf4j-jdk14:${slf4jVersion}")
+
+    implementation("org.mockito:mockito-core:${mockitoVersion}")
 }
 
 tasks.test {
