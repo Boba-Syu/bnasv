@@ -1,5 +1,6 @@
 package cn.bobasyu.utils
 
+import cn.bobasyu.base.HttpResult
 import cn.bobasyu.utils.ObjectJson.objectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -26,6 +27,15 @@ fun Any.toJson(): String = objectMapper.writeValueAsString(this)
  * json字符串转换为指定类型
  */
 fun <T> String.parseJson(objectType: Class<T>): T = objectMapper.readValue(this, objectType)
+
+fun <T, U> String.parseJson(outerType: Class<T>, innerType: Class<U>): T =
+    objectMapper.readValue(this, objectMapper.typeFactory.constructParametricType(outerType, innerType))
+
+fun <T> String.parseJsonToHttpResult(type: Class<T>): HttpResult<T> =
+    objectMapper.readValue(this, objectMapper.typeFactory.constructParametricType(HttpResult::class.java, type))
+
+fun <T> String.parseJsonToList(type: Class<T>): List<T> =
+    objectMapper.readValue(this, objectMapper.typeFactory.constructParametricType(List::class.java, type))
 
 /**
  * json序列化器类，在eventBus注册中使用
