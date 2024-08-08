@@ -71,8 +71,8 @@ class UserHandlerTest {
             val client = WebClient.create(vertx)
             val httpResponse = client.get("/user").addQueryParam("id", "1").send().await()
 
-            val resp: HttpResult<*> = httpResponse.body().toString().parseJson(HttpResult::class.java)
-            val data = resp.data!!.toJson().parseJson(UserRecord::class.java)
+            val resp: HttpResult<UserRecord> = httpResponse.body().toString().parseJson(HttpResult::class.java, UserRecord::class.java) as HttpResult<UserRecord>
+            val data = resp.data //resp.data!!.toJson().parseJson(UserRecord::class.java)
 
             assertEquals(data, userRecord)
             Mockito.verify(userRepositoryVerticle, Mockito.times(1)).queryUserById(1)
