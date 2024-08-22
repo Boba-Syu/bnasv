@@ -5,9 +5,9 @@ import io.vertx.core.Future
 import io.vertx.sqlclient.Tuple
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.reflect.Field
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.memberProperties
 
 enum class Order(val value: String) {
     ASC("ASC"), DESC("DESC")
@@ -32,10 +32,13 @@ class SqlGenerator(
     private lateinit var generateType: GenerateType
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(SqlGenerator::class.java);
+        private val log: Logger = LoggerFactory.getLogger(SqlGenerator::class.java)
     }
 
-    fun generate(): String = sql.toString()
+    fun generate(): String = with(sql) {
+        append(";")
+        return toString()
+    }
 
     fun execute(mySqlClient: MySqlClient): Future<out Any> {
         val condition = listOf(Tuple.from(params))
@@ -57,14 +60,15 @@ class SqlGenerator(
     fun select(vararg typeList: KProperty<Any>): SqlGenerator = this.apply {
         generateType = GenerateType.SELECT
         with(sql) {
-            append("select\n")
+            append("SELECT ")
             typeList.forEach { type ->
-                append("\t${type.name.camelToSnakeCase()}")
-                if (typeList.last() != type) {
-                    append(",\n")
+                append(type.name.camelToSnakeCase())
+                when {
+                    typeList.last() != type -> append(", ")
+                    else -> append(" ")
                 }
             }
-            append("\nfrom ${resultType.simpleName!!.camelToSnakeCase()}\n")
+            append("FROM ${resultType.simpleName!!.camelToSnakeCase()}")
         }
     }
 
@@ -73,7 +77,7 @@ class SqlGenerator(
      */
     fun select(): SqlGenerator = this.apply {
         generateType = GenerateType.SELECT
-        sql.append("select\n\t*\nfrom ${resultType.simpleName!!.camelToSnakeCase()}\n")
+        sql.append("SELECT * FROM ${resultType.simpleName!!.camelToSnakeCase()}")
     }
 
     /**
@@ -91,21 +95,23 @@ class SqlGenerator(
      * 插入语句，默认全部字段
      */
     fun insert(): SqlInsertGenerator {
-        val typeNameList: List<String> = resultType.memberProperties.map { it.name.camelToSnakeCase() }
+        // java版本的反射可以按照定义顺序获取属性
+        val declaredFields: Array<Field> = resultType.java.getDeclaredFields()
+        val typeNameList: List<String> = declaredFields.map { it.name.camelToSnakeCase() }
         return insert(typeNameList)
     }
 
     private fun insert(typeNameList: List<String>): SqlInsertGenerator {
         generateType = GenerateType.INSERT
         with(sql) {
-            append("insert into ${resultType.simpleName!!.camelToSnakeCase()}(\n")
+            append("INSERT INTO ${resultType.simpleName!!.camelToSnakeCase()}(")
             typeNameList.forEach { typeName ->
-                append("\t${typeName.camelToSnakeCase()}")
-                if (typeNameList.last() != typeName) {
-                    append(",\n")
+                append(typeName.camelToSnakeCase())
+                if (typeNameList.last() !== typeName) {
+                    append(", ")
                 }
             }
-            append("\n) values\n")
+            append(") VALUES ")
         }
         return SqlInsertGenerator(this)
     }
@@ -118,14 +124,13 @@ class SqlGenerator(
     fun <U> update(vararg typeList: KProperty<U>): SqlGenerator = this.apply {
         generateType = GenerateType.UPDATE
         with(sql) {
-            append("update ${resultType.simpleName!!.camelToSnakeCase()}\nset\n")
+            append("UPDATE ${resultType.simpleName!!.camelToSnakeCase()} SET")
             typeList.forEach { type ->
-                append("\t${type.name} = ?")
-                if (typeList.last() != type) {
-                    append(",\n")
+                append(" ${type.name} = ?")
+                if (typeList.last() !== type) {
+                    append(", ")
                 }
             }
-            append("\n")
         }
     }
 
@@ -134,14 +139,14 @@ class SqlGenerator(
      */
     fun delete(): SqlGenerator = this.apply {
         generateType = GenerateType.DELETE
-        sql.append("delete from ${resultType.simpleName!!.camelToSnakeCase()}\n")
+        sql.append("DELETE FROM ${resultType.simpleName!!.camelToSnakeCase()}")
     }
 
     /**
      * sql语句中拼接 where，配合 select、update或delete 使用
      */
     fun where(): SqlConditionGenerator {
-        sql.append("where\n")
+        sql.append(" WHERE")
         return sqlConditionGenerator
     }
 
@@ -157,7 +162,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> eq(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} = ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} = ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -168,7 +173,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> neq(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} != ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} != ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -179,7 +184,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> gt(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} > ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} > ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -190,7 +195,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> lt(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} < ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} < ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -201,7 +206,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> gte(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} >= ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} >= ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -212,7 +217,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> lte(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} <= ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} <= ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -223,7 +228,7 @@ class SqlGenerator(
          * @param type 查询条件对应的字段类型
          */
         fun <U : Any> like(type: KProperty<U>, obj: U): SqlWhereGenerator {
-            sql.append("\t${type.name.camelToSnakeCase()} like ?\n")
+            sql.append(" ${type.name.camelToSnakeCase()} like ?")
             sqlGenerator.params.add(obj)
             return sqlWhereGenerator
         }
@@ -239,7 +244,7 @@ class SqlGenerator(
          * sql语句中拼接 and，配合 where 使用
          */
         fun and(): SqlConditionGenerator {
-            sql.append("and\n")
+            sql.append(" AND")
             return sqlConditionGenerator
         }
 
@@ -247,12 +252,12 @@ class SqlGenerator(
          * sql语句中拼接 or，配合 where 使用
          */
         fun or(): SqlConditionGenerator {
-            sql.append("or\n")
+            sql.append(" OR")
             return sqlConditionGenerator
         }
 
-        fun <U : Any> orderBy(type: KProperty<U>, order: Order): SqlEndGenerator {
-            sql.append("order by ${type.name.camelToSnakeCase()} ${order.value}\n")
+        fun <U : Any> orderBy(type: KProperty<U>, order: Order = Order.ASC): SqlEndGenerator {
+            sql.append(" ORDER BY ${type.name.camelToSnakeCase()} ${order.value}")
             return SqlEndGenerator(sqlGenerator)
         }
     }
@@ -266,11 +271,11 @@ class SqlGenerator(
                 values.forEach { value ->
                     sqlGenerator.params.add(value)
                     append("?")
-                    if (value != values.last()) {
-                        append(",")
+                    if (value !== values.last()) {
+                        append(", ")
                     }
                 }
-                append(")\n")
+                append(")")
             }
         }
     }
