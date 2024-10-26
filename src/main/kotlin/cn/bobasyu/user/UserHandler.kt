@@ -2,14 +2,21 @@ package cn.bobasyu.user
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseCoroutineVerticle
+import cn.bobasyu.base.failure
 import cn.bobasyu.base.success
-import cn.bobasyu.utils.BaseCodec
+import cn.bobasyu.user.UserRecordConstant.USERNAME
+import cn.bobasyu.user.UserRecordConstant.USER_ID
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Future
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
+import io.vertx.core.eventbus.Message
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
@@ -24,8 +31,10 @@ import io.vertx.kotlin.coroutines.await
 class UserVerticle(
     applicationContext: ApplicationContext,
     private val router: Router,
-    private val userRepository: AbstractUserRepository
-) : BaseCoroutineVerticle(applicationContext) {
+) : BaseCoroutineVerticle() {
+
+    private val eventBus: EventBus by lazy { vertx.eventBus() }
+
     private val provider: JWTAuth = applicationContext.jwtAuth.provider
 
     override suspend fun start() {
@@ -35,26 +44,27 @@ class UserVerticle(
     /**
      * 注册路由
      */
-    private suspend fun setUserRouter() = with(router) {
+    private fun setUserRouter() = with(router) {
         post("/login").coroutineHandler { loginHandler(it) }
         post("/register").coroutineHandler { queryRegisterHandler(it) }
 
-//        route("/user/*").handler { auth(it) }
         route("/user/*").handler(JWTAuthHandler.create(provider))
         get("/user").coroutineHandler { queryByIdHandler(it) }
     }
 
-    private suspend fun loginHandler(ctx: RoutingContext) {
+    private fun loginHandler(ctx: RoutingContext) {
         ctx.request().asyncRequestBodyHandler(ctx) { body: Buffer ->
             // 验证用户名和密码
             val userLoginDTO: UserLoginDTO = body.toString().parseJson(UserLoginDTO::class.java)
-            val userRecord: UserRecord = userRepository.queryUserByUsernameAndPassword(userLoginDTO).await()
+            val userRecord: UserRecord =
+                eventBus.request<UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT, userLoginDTO)
+                    .await().body()
 
             // 使用jwt做鉴权
             val generateToken: String = provider.generateToken(json {
                 obj {
-                    "userId" to userRecord.userId
-                    "username" to userRecord.username
+                    USER_ID to userRecord.userId
+                    USERNAME to userRecord.username
                 }
             })
             ctx.response().end(generateToken)
@@ -62,17 +72,18 @@ class UserVerticle(
     }
 
     private suspend fun queryByIdHandler(ctx: RoutingContext) {
-        val userId: Int = ctx.request().getParam("id").toInt()
-        val userRecord = userRepository.queryUserById(userId).await()
-        ctx.response().end(success(userRecord).toJson())
+        val userId: Int = ctx.request().getParam(USER_ID).toInt()
+        val resp: Message<UserRecord> = eventBus.request<UserRecord>(USER_QUERY_BY_ID_EVENT, userId).await()
+        ctx.response().end(success(resp.body()).toJson())
     }
 
-    private suspend fun queryRegisterHandler(ctx: RoutingContext) {
+    private fun queryRegisterHandler(ctx: RoutingContext) {
         ctx.request().asyncRequestBodyHandler(ctx) { body: Buffer ->
             val json = body.toString()
             val userInsertDTO: UserInsertDTO = json.parseJson(UserInsertDTO::class.java)
-            userRepository.insertUser(userInsertDTO)
-            ctx.response().end(success().toJson())
+            eventBus.request<String>(USER_INSERT_EVENT, userInsertDTO)
+                .onSuccess { ctx.response().end(success().toJson()) }
+                .onFailure { ctx.response().end(failure(it.message).toJson()) }
         }
     }
 }
@@ -80,29 +91,41 @@ class UserVerticle(
 /**
  * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
  */
-interface AbstractUserRepository {
-    suspend fun queryUserList(): Future<List<UserRecord>>
+abstract class AbstractUserRepository : BaseCoroutineVerticle() {
+    private val eventBus: EventBus by lazy { vertx.eventBus() }
 
-    suspend fun queryUserById(id: Int): Future<UserRecord>
+    override suspend fun start() {
+        registerConsumer()
+    }
 
-    suspend fun queryUserByUsername(username: String): Future<UserRecord>
+    /**
+     * 注册总线事件消费方法
+     */
+    fun registerConsumer() = with(eventBus) {
+        asyncConsumer(USER_QUERY_EVENT) { handleQueryUserListEvent(it) }
+        asyncConsumer(USER_QUERY_BY_ID_EVENT) { handleQueryUserByIdEvent(it) }
+        asyncConsumer(USER_INSERT_EVENT) { handleInsertUserEvent(it) }
+        asyncConsumer(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT) { handleQueryUserByUsernameAndPasswordEvent(it) }
+    }
 
-    suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit>
+    abstract suspend fun handleQueryUserListEvent(message: Message<Unit>)
+    abstract suspend fun handleQueryUserByIdEvent(message: Message<Int>)
+    abstract suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)
+    abstract suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>)
 
-    suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord>
+
+    abstract suspend fun queryUserList(): Future<List<UserRecord>>
+    abstract suspend fun queryUserById(id: Int): Future<UserRecord>
+    abstract suspend fun queryUserByUsername(username: String): Future<UserRecord>
+    abstract suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit>
+    abstract suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord>
 }
 
-/**
- * 注册总线中实体类数据传输需要用到的编解码器
- */
-fun EventBus.registerCodecs(): EventBus = this.apply {
-    registerDefaultCodec(UserInsertDTO::class.java, BaseCodec(UserInsertDTO::class.java))
-    registerDefaultCodec(UserRecord::class.java, BaseCodec(UserRecord::class.java))
-}
 
 /**
  * 用户相关的服务注册
  */
 fun Vertx.deployUserVerticle(applicationContext: ApplicationContext, router: Router): Vertx = this.apply {
-    deployVerticle(UserVerticle(applicationContext, router, UserRepositoryVerticle(applicationContext.mySqlClient)))
+    deployVerticle(UserVerticle(applicationContext, router))
+    deployVerticle(UserRepositoryVerticle(applicationContext))
 }

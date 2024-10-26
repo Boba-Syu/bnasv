@@ -1,25 +1,5 @@
 package cn.bobasyu.databeses
 
-import cn.bobasyu.databeses.DeleteGenerator.delete
-import cn.bobasyu.databeses.InsertGenerator.get
-import cn.bobasyu.databeses.InsertGenerator.insertInto
-import cn.bobasyu.databeses.InsertGenerator.values
-import cn.bobasyu.databeses.SelectGenerator.from
-import cn.bobasyu.databeses.SelectGenerator.select
-import cn.bobasyu.databeses.UpdateGenerator.set
-import cn.bobasyu.databeses.UpdateGenerator.update
-import cn.bobasyu.databeses.WhereGenerator.and
-import cn.bobasyu.databeses.WhereGenerator.eq
-import cn.bobasyu.databeses.WhereGenerator.gt
-import cn.bobasyu.databeses.WhereGenerator.gte
-import cn.bobasyu.databeses.WhereGenerator.like
-import cn.bobasyu.databeses.WhereGenerator.lt
-import cn.bobasyu.databeses.WhereGenerator.lte
-import cn.bobasyu.databeses.WhereGenerator.neq
-import cn.bobasyu.databeses.WhereGenerator.or
-import cn.bobasyu.databeses.WhereGenerator.orderBy
-import cn.bobasyu.databeses.WhereGenerator.where
-import cn.bobasyu.user.UserRecord
 import cn.bobasyu.utils.camelToSnakeCase
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -192,63 +172,4 @@ object DeleteGenerator {
         append(";")
         toString()
     }
-}
-
-fun main() {
-    var sql = insertInto(
-        UserRecord::class,
-        values(
-            listOf(1, "abc1", "abc2"),
-            listOf(2, "def1", "def2"),
-        )
-    )
-    println(sql)
-    sql = insertInto(
-        UserRecord::class[UserRecord::userId, UserRecord::username, UserRecord::password],
-        values(
-            listOf(1, "abc1", "abc2"),
-            listOf(2, "def1", "def2"),
-        )
-    )
-    println(sql)
-    sql = select(
-        UserRecord::class,
-        where(
-            eq(UserRecord::userId, 1)
-                    and like(UserRecord::username, "123")
-        ),
-        orderBy(UserRecord::userId, Order.ASC)
-    )
-    println(sql)
-    sql = select(
-        listOf(UserRecord::userId, UserRecord::username, UserRecord::password) from UserRecord::class,
-        where(
-            eq(UserRecord::userId, 1)
-                    and like(UserRecord::username, "123")
-                    or eq(UserRecord::password, "abc")
-        ),
-        orderBy(UserRecord::userId, Order.ASC)
-    )
-    println(sql)
-    sql = update(
-        UserRecord::class,
-        set(
-            UserRecord::username to "123",
-            UserRecord::password to "abc",
-        ),
-        where(
-            neq(UserRecord::userId, 1)
-                    and gt(UserRecord::username, "123")
-                    or lt(UserRecord::password, "abc")
-        )
-    )
-    println(sql)
-    sql = delete(
-        UserRecord::class,
-        where(
-            gte(UserRecord::username, "123")
-                    or lte(UserRecord::password, "abc")
-        )
-    )
-    println(sql)
 }

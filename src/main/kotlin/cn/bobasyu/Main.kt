@@ -3,9 +3,14 @@ package cn.bobasyu
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
+import cn.bobasyu.user.UserInsertDTO
+import cn.bobasyu.user.UserLoginDTO
+import cn.bobasyu.user.UserRecord
 import cn.bobasyu.user.deployUserVerticle
+import cn.bobasyu.utils.BaseCodec
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
+import io.vertx.core.eventbus.EventBus
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.SessionHandler
@@ -25,7 +30,7 @@ class MainVerticle(
     private val port: Int = 8080
 ) : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
-    val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
+    private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
@@ -59,9 +64,9 @@ class MainVerticle(
 
     private fun Router.registerFailureHandler() {
         route().last().failureHandler { ctx ->
-            if(ctx.failure().message == "Unauthorized") {
+            if (ctx.failure().message == "Unauthorized") {
                 ctx.response().end(unauthorized().toJson())
-            }else {
+            } else {
 
                 logger.error("failure request, {}", ctx.request().absoluteURI())
                 ctx.response().end(failure(ctx.request().uri()).toJson())
@@ -70,7 +75,20 @@ class MainVerticle(
     }
 }
 
+/**
+ * 注册总线中实体类数据传输需要用到的编解码器
+ */
+fun EventBus.registerCodecs(): EventBus = this.apply {
+    registerDefaultCodec(UserInsertDTO::class.java, BaseCodec(UserInsertDTO::class.java))
+    registerDefaultCodec(UserLoginDTO::class.java, BaseCodec(UserLoginDTO::class.java))
+    registerDefaultCodec(UserRecord::class.java, BaseCodec(UserRecord::class.java))
+}
+
+
 fun main() {
     val mainVerticle = MainVerticle(listOf(Vertx::deployUserVerticle))
-    Vertx.vertx().deployVerticle(mainVerticle)
+    Vertx.vertx().apply {
+        eventBus().registerCodecs()
+        deployVerticle(mainVerticle)
+    }
 }

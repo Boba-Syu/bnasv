@@ -4,10 +4,8 @@ import cn.bobasyu.DeployServiceVerticleHandler
 import cn.bobasyu.MainVerticle
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.HttpResult
-import cn.bobasyu.user.AbstractUserRepository
-import cn.bobasyu.user.UserLoginDTO
-import cn.bobasyu.user.UserRecord
-import cn.bobasyu.user.UserVerticle
+import cn.bobasyu.registerCodecs
+import cn.bobasyu.user.*
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Future
@@ -18,6 +16,7 @@ import io.vertx.ext.web.client.WebClient
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
 import io.vertx.kotlin.coroutines.await
+import io.vertx.kotlin.ext.web.client.webClientOptionsOf
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -30,15 +29,17 @@ import kotlin.test.assertEquals
 @ExtendWith(VertxExtension::class)
 class UserHandlerTest {
 
-    private val userRepositoryVerticle: AbstractUserRepository = Mockito.mock(AbstractUserRepository::class.java)
+    private val userRepositoryVerticle: AbstractUserRepository = Mockito.mock(UserRepositoryVerticle::class.java)
 
     private lateinit var userVerticle: UserVerticle
 
     private fun deployUserTestVerticle(vertx: Vertx): DeployServiceVerticleHandler {
         return { applicationContext: ApplicationContext, router: Router ->
             vertx.apply {
-                userVerticle = UserVerticle(applicationContext, router, userRepositoryVerticle)
-                vertx.deployVerticle(userVerticle)
+                eventBus().registerCodecs()
+                userVerticle = UserVerticle(applicationContext, router)
+                deployVerticle(userVerticle)
+                deployVerticle(userRepositoryVerticle)
             }
         }
     }
@@ -68,11 +69,12 @@ class UserHandlerTest {
             val userRecord = UserRecord(1, "test1", "testPassword1", LocalDateTime.now(), LocalDateTime.now())
             Mockito.`when`(userRepositoryVerticle.queryUserById(1)).thenReturn(Future.succeededFuture(userRecord))
 
-            val client = WebClient.create(vertx)
+            val client = WebClient.create(vertx, webClientOptionsOf(defaultPort = 8080))
             val httpResponse = client.get("/user").addQueryParam("id", "1").send().await()
 
-            val resp: HttpResult<UserRecord> = httpResponse.body().toString().parseJson(HttpResult::class.java, UserRecord::class.java) as HttpResult<UserRecord>
-            val data = resp.data //resp.data!!.toJson().parseJson(UserRecord::class.java)
+            val resp: HttpResult<UserRecord> = httpResponse.body().toString()
+                .parseJson(HttpResult::class.java, UserRecord::class.java) as HttpResult<UserRecord>
+            val data = resp.data
 
             assertEquals(data, userRecord)
             Mockito.verify(userRepositoryVerticle, Mockito.times(1)).queryUserById(1)
@@ -87,8 +89,9 @@ class UserHandlerTest {
             val userLoginDTO = UserLoginDTO("test1", "testPassword1")
             Mockito.`when`(userRepositoryVerticle.queryUserByUsernameAndPassword(userLoginDTO))
                 .thenReturn(Future.succeededFuture(userRecord))
+            userRepositoryVerticle.registerConsumer()
 
-            val client = WebClient.create(vertx)
+            val client = WebClient.create(vertx, webClientOptionsOf(defaultPort = 8080))
             val httpResponse = client.post("/login").sendBuffer(Buffer.buffer(userLoginDTO.toJson())).await()
 
             println(httpResponse.body())
