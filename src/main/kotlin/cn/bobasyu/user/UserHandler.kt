@@ -13,6 +13,7 @@ import io.vertx.core.eventbus.EventBus
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.JWTAuthHandler
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.await
@@ -24,10 +25,8 @@ class UserVerticle(
     applicationContext: ApplicationContext,
     private val router: Router,
     private val userRepository: AbstractUserRepository
-) : BaseCoroutineVerticle() {
-    private val eventBus: EventBus by lazy { vertx.eventBus().registerCodecs() }
+) : BaseCoroutineVerticle(applicationContext) {
     private val provider: JWTAuth = applicationContext.jwtAuth.provider
-    private val basicAutHandler = applicationContext.jwtAuth.basicAutHandler
 
     override suspend fun start() {
         setUserRouter()
@@ -40,7 +39,8 @@ class UserVerticle(
         post("/login").coroutineHandler { loginHandler(it) }
         post("/register").coroutineHandler { queryRegisterHandler(it) }
 
-//        route("/user/*").handler(basicAutHandler)
+//        route("/user/*").handler { auth(it) }
+        route("/user/*").handler(JWTAuthHandler.create(provider))
         get("/user").coroutineHandler { queryByIdHandler(it) }
     }
 
@@ -51,12 +51,13 @@ class UserVerticle(
             val userRecord: UserRecord = userRepository.queryUserByUsernameAndPassword(userLoginDTO).await()
 
             // 使用jwt做鉴权
-            ctx.response().end(provider.generateToken(json {
+            val generateToken: String = provider.generateToken(json {
                 obj {
                     "userId" to userRecord.userId
                     "username" to userRecord.username
                 }
-            }))
+            })
+            ctx.response().end(generateToken)
         }
     }
 

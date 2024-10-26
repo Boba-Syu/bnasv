@@ -7,11 +7,7 @@ import io.vertx.kotlin.mysqlclient.mySQLConnectOptionsOf
 import io.vertx.kotlin.sqlclient.poolOptionsOf
 import io.vertx.mysqlclient.MySQLConnectOptions
 import io.vertx.mysqlclient.MySQLPool
-import io.vertx.sqlclient.PoolOptions
-import io.vertx.sqlclient.Row
-import io.vertx.sqlclient.RowSet
-import io.vertx.sqlclient.SqlConnection
-import io.vertx.sqlclient.Tuple
+import io.vertx.sqlclient.*
 import kotlin.reflect.KClass
 
 /**
@@ -51,7 +47,7 @@ class MySqlClient(
     /**
      * 条件查询方法
      */
-    fun  queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<out Any>> =
+    fun queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<Any>> =
         sqlPool.withConnection { it.queryByConditions(sql, conditions, resultType) }
 
     /**
@@ -79,7 +75,7 @@ inline fun <reified T> SqlConnection.query(sql: String, resultType: Class<T>): F
 /**
  * 条件查询方法，可在事务中使用
  */
-fun SqlConnection.queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<out Any>> {
+fun SqlConnection.queryByConditions(sql: String, conditions: List<Tuple>, resultType: KClass<out Any>): Future<List<Any>> {
     return preparedQuery(sql)
         .executeBatch(conditions)
         .map { rowSet ->

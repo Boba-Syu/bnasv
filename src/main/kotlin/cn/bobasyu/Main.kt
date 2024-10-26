@@ -2,12 +2,14 @@ package cn.bobasyu
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
-import cn.bobasyu.base.notFound
+import cn.bobasyu.base.unauthorized
 import cn.bobasyu.user.deployUserVerticle
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.SessionHandler
+import io.vertx.ext.web.sstore.LocalSessionStore
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,19 +25,29 @@ class MainVerticle(
     private val port: Int = 8080
 ) : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
-    private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
+    val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
     }
 
     override suspend fun start() {
+        // 路由
         val router = Router.router(vertx)
         router.registerFailureHandler()
+
+        // 设置session
+        val store: LocalSessionStore = LocalSessionStore.create(vertx)
+        val sessionHandler: SessionHandler = SessionHandler.create(store).setCookieless(true)
+            .setSessionTimeout(24 * 60 * 60 * 100)
+        router.route().handler(sessionHandler)
+
+        // 注册handler
         deployServiceVerticleHandlerList.forEach { vertx.it(applicationContext, router) }
 
+        // 启动服务
         server.requestHandler(router)
-            .listen()
+            .listen(port)
             .onSuccess { logger.info("server start succeed, port=${port}.") }
     }
 
@@ -47,8 +59,13 @@ class MainVerticle(
 
     private fun Router.registerFailureHandler() {
         route().last().failureHandler { ctx ->
-            logger.error("failure request, {}", ctx.request().absoluteURI())
-            ctx.response().end(notFound(ctx.request().uri()).toJson())
+            if(ctx.failure().message == "Unauthorized") {
+                ctx.response().end(unauthorized().toJson())
+            }else {
+
+                logger.error("failure request, {}", ctx.request().absoluteURI())
+                ctx.response().end(failure(ctx.request().uri()).toJson())
+            }
         }
     }
 }

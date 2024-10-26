@@ -34,4 +34,6 @@ fun failure(e: Throwable): HttpResult<Unit> = when (e) {
 }
 
 fun notFound(uri: String): HttpResult<Unit> =
-    HttpResult(code = ResultCode.NOT_FOUND.code, message = "not found uri  [${uri}].")
+    HttpResult(code = ResultCode.NOT_FOUND.code, message = "not found uri [${uri}].")
+
+fun unauthorized(): HttpResult<Unit> = HttpResult(code = ResultCode.UNAUTHORIZED.code, message = "Unauthorized")

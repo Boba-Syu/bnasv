@@ -4,7 +4,9 @@ import cn.bobasyu.utils.toJson
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
+import io.vertx.core.http.Cookie
 import io.vertx.core.http.HttpServerRequest
+import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.CoroutineVerticle
@@ -15,8 +17,12 @@ import org.slf4j.LoggerFactory
 /**
  * 基础verticle封装，添加了很多基于协程的操作方法
  */
-open class BaseCoroutineVerticle : CoroutineVerticle() {
+open class BaseCoroutineVerticle(
+    applicationContext: ApplicationContext
+) : CoroutineVerticle() {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private val provider: JWTAuth = applicationContext.jwtAuth.provider
 
     /**
      * 以协程方式注册路由方法
@@ -56,6 +62,13 @@ open class BaseCoroutineVerticle : CoroutineVerticle() {
     suspend fun <T> EventBus.asyncConsumer(address: String, handler: suspend (Message<T>) -> Unit) {
         consumer(address) {
             launch(vertx.dispatcher()) { handler(it) }
+        }
+    }
+
+    fun auth(ctx: RoutingContext) {
+        val cookie: Cookie? = ctx.request().getCookie("auth")
+        if (cookie == null) {
+            ctx.end(unauthorized().toJson())
         }
     }
 
