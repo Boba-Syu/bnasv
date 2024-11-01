@@ -15,7 +15,7 @@ import io.vertx.kotlin.coroutines.await
  */
 open class UserRepositoryVerticle(
     applicationContext: ApplicationContext
-) : AbstractUserRepository() {
+) : AbstractUserRepository(applicationContext) {
     private val mySqlClient: MySqlClient = applicationContext.mySqlClient
 
     override suspend fun start() {

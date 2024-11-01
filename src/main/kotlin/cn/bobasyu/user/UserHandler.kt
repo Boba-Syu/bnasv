@@ -31,11 +31,11 @@ import io.vertx.kotlin.coroutines.await
 class UserVerticle(
     applicationContext: ApplicationContext,
     private val router: Router,
-) : BaseCoroutineVerticle() {
+) : BaseCoroutineVerticle(applicationContext) {
 
     private val eventBus: EventBus by lazy { vertx.eventBus() }
 
-    private val provider: JWTAuth = applicationContext.jwtAuth.provider
+    private val provider: JWTAuth = applicationContext.provider
 
     override suspend fun start() {
         setUserRouter()
@@ -48,7 +48,7 @@ class UserVerticle(
         post("/login").coroutineHandler { loginHandler(it) }
         post("/register").coroutineHandler { queryRegisterHandler(it) }
 
-        route("/user/*").handler(JWTAuthHandler.create(provider))
+        route("/user/*").authHandler()
         get("/user").coroutineHandler { queryByIdHandler(it) }
     }
 
@@ -91,7 +91,9 @@ class UserVerticle(
 /**
  * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
  */
-abstract class AbstractUserRepository : BaseCoroutineVerticle() {
+abstract class AbstractUserRepository(
+    private val applicationContext: ApplicationContext
+) : BaseCoroutineVerticle(applicationContext) {
     private val eventBus: EventBus by lazy { vertx.eventBus() }
 
     override suspend fun start() {

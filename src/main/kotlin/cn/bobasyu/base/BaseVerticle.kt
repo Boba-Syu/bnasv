@@ -7,6 +7,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.JWTAuthHandler
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.launch
@@ -15,7 +16,9 @@ import org.slf4j.LoggerFactory
 /**
  * 基础verticle封装，添加了很多基于协程的操作方法
  */
-open class BaseCoroutineVerticle : CoroutineVerticle() {
+open class BaseCoroutineVerticle(
+    private val applicationContext: ApplicationContext
+) : CoroutineVerticle() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
 
@@ -57,6 +60,16 @@ open class BaseCoroutineVerticle : CoroutineVerticle() {
     fun <T> EventBus.asyncConsumer(address: String, handler: suspend (Message<T>) -> Unit) {
         consumer(address) {
             launch(vertx.dispatcher()) { handler(it) }
+        }
+    }
+
+    /**
+     * 鉴权方法
+     */
+    fun Route.authHandler() {
+        this.handler(JWTAuthHandler.create(applicationContext.provider))
+        this.handler { ctx: RoutingContext ->
+            // todo 验证密码
         }
     }
 }
