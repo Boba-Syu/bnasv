@@ -2,7 +2,7 @@ package cn.bobasyu.test.databases
 
 import cn.bobasyu.databeses.Order
 import cn.bobasyu.databeses.SqlGenerator
-import cn.bobasyu.user.UserRecord
+import cn.bobasyu.entity.UserRecord
 import io.vertx.junit5.VertxExtension
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith

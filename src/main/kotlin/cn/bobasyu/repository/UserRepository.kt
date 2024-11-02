@@ -6,9 +6,9 @@ import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.databeses.SqlGenerator
-import cn.bobasyu.user.UserInsertDTO
-import cn.bobasyu.user.UserLoginDTO
-import cn.bobasyu.user.UserRecord
+import cn.bobasyu.entity.UserInsertDTO
+import cn.bobasyu.entity.UserLoginDTO
+import cn.bobasyu.entity.UserRecord
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT

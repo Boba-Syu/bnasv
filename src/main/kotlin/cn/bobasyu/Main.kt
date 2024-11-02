@@ -4,9 +4,10 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
 import cn.bobasyu.repository.deployRepositoryVerticle
-import cn.bobasyu.user.UserInsertDTO
-import cn.bobasyu.user.UserLoginDTO
-import cn.bobasyu.user.UserRecord
+import cn.bobasyu.entity.UserInsertDTO
+import cn.bobasyu.entity.UserLoginDTO
+import cn.bobasyu.entity.UserRecord
+import cn.bobasyu.entity.registerCodecs
 import cn.bobasyu.user.deployUserVerticle
 import cn.bobasyu.utils.BaseCodec
 import cn.bobasyu.utils.toJson
@@ -68,14 +69,7 @@ class MainVerticle(
     }
 }
 
-/**
- * 注册总线中实体类数据传输需要用到的编解码器
- */
-fun EventBus.registerCodecs(): EventBus = this.apply {
-    registerDefaultCodec(UserInsertDTO::class.java, BaseCodec(UserInsertDTO::class.java))
-    registerDefaultCodec(UserLoginDTO::class.java, BaseCodec(UserLoginDTO::class.java))
-    registerDefaultCodec(UserRecord::class.java, BaseCodec(UserRecord::class.java))
-}
+
 
 
 fun main() {
