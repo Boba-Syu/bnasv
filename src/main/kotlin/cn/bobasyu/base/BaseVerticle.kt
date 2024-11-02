@@ -13,14 +13,12 @@ import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
-/**
- * 基础verticle封装，添加了很多基于协程的操作方法
- */
-open class BaseCoroutineVerticle(
-    private val applicationContext: ApplicationContext
-) : CoroutineVerticle() {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
+abstract class BaseServiceVerticle(
+    applicationContext: ApplicationContext
+) : BaseCoroutineVerticle(applicationContext) {
+    override suspend fun start() {
+        setUserRouter()
+    }
 
     /**
      * 以协程方式注册路由方法
@@ -53,6 +51,33 @@ open class BaseCoroutineVerticle(
             }
         }
     }
+
+    /**
+     * 设置路由
+     */
+    abstract fun setUserRouter()
+}
+
+abstract class BaseRepositoryVerticle(
+    applicationContext: ApplicationContext
+) : BaseCoroutineVerticle(applicationContext) {
+    override suspend fun start() {
+        registerConsumer()
+    }
+
+    /**
+     * 注册总线事件消费方法
+     */
+    abstract fun registerConsumer()
+}
+
+/**
+ * 基础verticle封装，添加了很多基于协程的操作方法
+ */
+open class BaseCoroutineVerticle(
+    private val applicationContext: ApplicationContext
+) : CoroutineVerticle() {
+    val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
      * 以协程方式异步消费总线事件方法

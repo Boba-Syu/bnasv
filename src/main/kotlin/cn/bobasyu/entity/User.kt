@@ -1,6 +1,8 @@
 package cn.bobasyu.entity
 
+import cn.bobasyu.utils.BaseCodec
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.vertx.core.eventbus.EventBus
 import java.time.LocalDateTime
 
 /**
@@ -29,3 +31,9 @@ data class UserLoginDTO(
     val username: String,
     val password: String,
 )
+
+fun EventBus.registerUserCodecs(): EventBus = this.apply {
+    registerDefaultCodec(UserInsertDTO::class.java, BaseCodec(UserInsertDTO::class.java))
+    registerDefaultCodec(UserLoginDTO::class.java, BaseCodec(UserLoginDTO::class.java))
+    registerDefaultCodec(UserRecord::class.java, BaseCodec(UserRecord::class.java))
+}

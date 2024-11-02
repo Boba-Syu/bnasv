@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat
 object ObjectJson {
     val objectMapper by lazy {
         val mapper = jacksonObjectMapper()
-        mapper.setDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+        mapper.dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
         mapper.registerModule(JavaTimeModule())
         mapper
     }

@@ -3,16 +3,10 @@ package cn.bobasyu
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
-import cn.bobasyu.repository.deployRepositoryVerticle
-import cn.bobasyu.entity.UserInsertDTO
-import cn.bobasyu.entity.UserLoginDTO
-import cn.bobasyu.entity.UserRecord
 import cn.bobasyu.entity.registerCodecs
 import cn.bobasyu.user.deployUserVerticle
-import cn.bobasyu.utils.BaseCodec
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
-import io.vertx.core.eventbus.EventBus
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.Router
 import io.vertx.kotlin.coroutines.CoroutineVerticle
@@ -75,7 +69,6 @@ class MainVerticle(
 fun main() {
     val deployServiceVerticleHandlerList = listOf(
         Vertx::deployUserVerticle,
-        Vertx::deployRepositoryVerticle
     )
     val mainVerticle = MainVerticle(deployServiceVerticleHandlerList)
 
