@@ -121,7 +121,14 @@ class SqlGenerator(
      *
      * @param typeList 被更新的字段
      */
-    fun <U> update(vararg typeList: KProperty<U>): SqlGenerator = this.apply {
+    fun <U> update(vararg typeList: KProperty<U>): SqlGenerator = update(typeList.toList())
+
+    /**
+     * 更新语句
+     *
+     * @param typeList 被更新的字段
+     */
+    fun <U> update(typeList: List<KProperty<U>>): SqlGenerator = this.apply {
         generateType = GenerateType.UPDATE
         with(sql) {
             append("UPDATE ${resultType.simpleName!!.camelToSnakeCase()} SET")
