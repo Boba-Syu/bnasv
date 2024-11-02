@@ -1,13 +1,51 @@
-package cn.bobasyu.user
+package cn.bobasyu.repository
 
 import cn.bobasyu.base.ApplicationContext
+import cn.bobasyu.base.BaseCoroutineVerticle
 import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.databeses.SqlGenerator
+import cn.bobasyu.user.UserInsertDTO
+import cn.bobasyu.user.UserLoginDTO
+import cn.bobasyu.user.UserRecord
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import io.vertx.core.Future
+import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.kotlin.coroutines.await
+
+
+/**
+ * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
+ */
+abstract class AbstractUserRepository(
+    applicationContext: ApplicationContext
+) : BaseCoroutineVerticle(applicationContext) {
+    private val eventBus: EventBus by lazy { vertx.eventBus() }
+
+    override suspend fun start() {
+        registerConsumer()
+    }
+
+    /**
+     * 注册总线事件消费方法
+     */
+    fun registerConsumer() = with(eventBus) {
+        asyncConsumer(USER_QUERY_EVENT) { handleQueryUserListEvent(it) }
+        asyncConsumer(USER_QUERY_BY_ID_EVENT) { handleQueryUserByIdEvent(it) }
+        asyncConsumer(USER_INSERT_EVENT) { handleInsertUserEvent(it) }
+        asyncConsumer(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT) { handleQueryUserByUsernameAndPasswordEvent(it) }
+    }
+
+    abstract suspend fun handleQueryUserListEvent(message: Message<Unit>)
+    abstract suspend fun handleQueryUserByIdEvent(message: Message<Int>)
+    abstract suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)
+    abstract suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>)
+}
 
 
 /**
@@ -62,12 +100,12 @@ open class UserRepositoryVerticle(
             .map { return@map (it as List<*>).isNotEmpty() }
     }
 
-    override suspend fun queryUserList(): Future<List<UserRecord>> {
+    private fun queryUserList(): Future<List<UserRecord>> {
         val queryListSql: String = SqlGenerator(UserRecord::class).select().generate()
         return mySqlClient.query(queryListSql, UserRecord::class.java)
     }
 
-    override suspend fun queryUserById(id: Int): Future<UserRecord> {
+    private fun queryUserById(id: Int): Future<UserRecord> {
         return SqlGenerator(UserRecord::class)
             .select()
             .where().eq(UserRecord::userId, id)
@@ -81,7 +119,7 @@ open class UserRepositoryVerticle(
             .map { it as UserRecord }
     }
 
-    override suspend fun queryUserByUsername(username: String): Future<UserRecord> {
+    private fun queryUserByUsername(username: String): Future<UserRecord> {
         return SqlGenerator(UserRecord::class)
             .select()
             .where().eq(UserRecord::username, username)
@@ -95,8 +133,7 @@ open class UserRepositoryVerticle(
             .map { it as UserRecord }
     }
 
-
-    override suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit> {
+    private fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit> {
         return SqlGenerator(UserRecord::class)
             .insert(UserRecord::username, UserRecord::password)
             .values(userInsertDTO.username, userInsertDTO.password)
@@ -104,8 +141,7 @@ open class UserRepositoryVerticle(
             .map {}
     }
 
-
-    override suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
+    private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
         return SqlGenerator(UserRecord::class).select()
             .where().eq(UserRecord::username, userLoginDTO.username)
             .and().eq(UserRecord::password, userLoginDTO.password)

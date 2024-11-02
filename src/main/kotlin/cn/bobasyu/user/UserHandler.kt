@@ -4,6 +4,7 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseCoroutineVerticle
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.success
+import cn.bobasyu.repository.UserRepositoryVerticle
 import cn.bobasyu.user.UserRecordConstant.USERNAME
 import cn.bobasyu.user.UserRecordConstant.USER_ID
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
@@ -12,15 +13,12 @@ import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND
 import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
-import io.vertx.core.Future
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.auth.jwt.JWTAuth
-import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.JWTAuthHandler
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.await
@@ -29,8 +27,7 @@ import io.vertx.kotlin.coroutines.await
  * 用户信息相关操作，包括登录、注册、查询等
  */
 class UserVerticle(
-    applicationContext: ApplicationContext,
-    private val router: Router,
+    val applicationContext: ApplicationContext,
 ) : BaseCoroutineVerticle(applicationContext) {
 
     private val eventBus: EventBus by lazy { vertx.eventBus() }
@@ -44,7 +41,7 @@ class UserVerticle(
     /**
      * 注册路由
      */
-    private fun setUserRouter() = with(router) {
+    private fun setUserRouter() = with(applicationContext.router) {
         post("/login").coroutineHandler { loginHandler(it) }
         post("/register").coroutineHandler { queryRegisterHandler(it) }
 
@@ -86,48 +83,4 @@ class UserVerticle(
                 .onFailure { ctx.response().end(failure(it.message).toJson()) }
         }
     }
-}
-
-/**
- * 用户操作Repository抽象类，消费相关总线事件返回数据库操作结果，抽离出数据库操作的具体实现，方便日后更换底层实现
- */
-abstract class AbstractUserRepository(
-    private val applicationContext: ApplicationContext
-) : BaseCoroutineVerticle(applicationContext) {
-    private val eventBus: EventBus by lazy { vertx.eventBus() }
-
-    override suspend fun start() {
-        registerConsumer()
-    }
-
-    /**
-     * 注册总线事件消费方法
-     */
-    fun registerConsumer() = with(eventBus) {
-        asyncConsumer(USER_QUERY_EVENT) { handleQueryUserListEvent(it) }
-        asyncConsumer(USER_QUERY_BY_ID_EVENT) { handleQueryUserByIdEvent(it) }
-        asyncConsumer(USER_INSERT_EVENT) { handleInsertUserEvent(it) }
-        asyncConsumer(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT) { handleQueryUserByUsernameAndPasswordEvent(it) }
-    }
-
-    abstract suspend fun handleQueryUserListEvent(message: Message<Unit>)
-    abstract suspend fun handleQueryUserByIdEvent(message: Message<Int>)
-    abstract suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)
-    abstract suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>)
-
-
-    abstract suspend fun queryUserList(): Future<List<UserRecord>>
-    abstract suspend fun queryUserById(id: Int): Future<UserRecord>
-    abstract suspend fun queryUserByUsername(username: String): Future<UserRecord>
-    abstract suspend fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit>
-    abstract suspend fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord>
-}
-
-
-/**
- * 用户相关的服务注册
- */
-fun Vertx.deployUserVerticle(applicationContext: ApplicationContext, router: Router): Vertx = this.apply {
-    deployVerticle(UserVerticle(applicationContext, router))
-    deployVerticle(UserRepositoryVerticle(applicationContext))
 }
