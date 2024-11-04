@@ -13,6 +13,8 @@ val vertxVersion = "4.4.0"
 val jacksonVersion = "2.17.2"
 val slf4jVersion = "1.5.6"
 val mockitoVersion = "5.12.0"
+val hibernateVersion = "5.6.15.Final"
+val postgresqlVersion = "42.7.4"
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -27,6 +29,9 @@ dependencies {
     implementation("io.vertx:vertx-auth-common:${vertxVersion}")
     implementation("io.vertx:vertx-lang-kotlin-coroutines:${vertxVersion}")
     implementation("io.vertx:vertx-mysql-client:${vertxVersion}")
+
+    implementation("org.hibernate:hibernate-entitymanager:${hibernateVersion}")
+    implementation("org.postgresql:postgresql:${postgresqlVersion}")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}")
