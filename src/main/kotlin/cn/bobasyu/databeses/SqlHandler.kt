@@ -5,7 +5,7 @@ import jakarta.persistence.Persistence
 import org.hibernate.reactive.mutiny.Mutiny.Session
 import org.hibernate.reactive.mutiny.Mutiny.SessionFactory
 
-object PostgresqlClient {
+object SqlClient {
     val factory: SessionFactory by lazy {
         Persistence.createEntityManagerFactory("postgresql-example")
             .unwrap(SessionFactory::class.java)

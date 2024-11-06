@@ -65,7 +65,7 @@ abstract class BaseRepositoryVerticle(
         registerConsumer()
     }
 
-    fun <T, U> handle(message: Message<T>, fn: (message: Message<T>) -> U) {
+    fun <T, U> handleEvent(message: Message<T>, fn: (message: Message<T>) -> U) {
         try {
             val u: U = fn(message)
             message.reply(u)

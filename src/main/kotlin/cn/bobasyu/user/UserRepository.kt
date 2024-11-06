@@ -4,7 +4,7 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
-import cn.bobasyu.databeses.PostgresqlClient
+import cn.bobasyu.databeses.SqlClient
 import cn.bobasyu.databeses.SqlGenerator
 import cn.bobasyu.entity.UserInsertDTO
 import cn.bobasyu.entity.UserLoginDTO
@@ -31,12 +31,12 @@ open class UserRepositoryVerticle(
             .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) = handle(message) {
+    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) = handleEvent(message) {
         val userId: Int = message.body()
         queryUserById(userId)
     }
 
-    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)  = handle(message) {
+    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)  = handleEvent(message) {
         val userInsertDTO: UserInsertDTO = message.body()
         val ifExisted = queryUsernameExist(userInsertDTO.username)
         if (ifExisted) {
@@ -45,13 +45,13 @@ open class UserRepositoryVerticle(
         insertUser(userInsertDTO)
     }
 
-    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) = handle(message) {
+    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) = handleEvent(message) {
         val userLoginDTO: UserLoginDTO = message.body()
         queryUserByUsernameAndPassword(userLoginDTO)
     }
 
     private fun queryUsernameExist(username: String): Boolean {
-        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+        val list: List<UserRecord> = SqlClient.withSession { session ->
             session.createQuery("FROM UserRecord where username = :username", UserRecord::class.java)
                 .setParameter(0, username)
                 .resultList
@@ -65,7 +65,7 @@ open class UserRepositoryVerticle(
     }
 
     private fun queryUserById(id: Int): UserRecord {
-        val userRecord: UserRecord? = PostgresqlClient.withSession { session ->
+        val userRecord: UserRecord? = SqlClient.withSession { session ->
             session.find(UserRecord::class.java, id)
         }.await().indefinitely()
         if (userRecord == null) {
@@ -75,7 +75,7 @@ open class UserRepositoryVerticle(
     }
 
     private fun queryUserByUsername(username: String): UserRecord {
-        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+        val list: List<UserRecord> = SqlClient.withSession { session ->
             session.createQuery("FROM UserRecord where username = :username", UserRecord::class.java)
                 .setParameter(0, username)
                 .resultList
@@ -88,14 +88,14 @@ open class UserRepositoryVerticle(
     }
 
     private fun insertUser(userInsertDTO: UserInsertDTO) : Unit {
-        PostgresqlClient.withSession { session ->
+        SqlClient.withSession { session ->
             val userRecord = UserRecord(username = userInsertDTO.username, password = userInsertDTO.password)
             session.persist(userRecord)
         }.await().indefinitely()
     }
 
     private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): UserRecord {
-        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+        val list: List<UserRecord> = SqlClient.withSession { session ->
             session.createQuery("FROM UserRecord WHERE username = :username AND password = :password", UserRecord::class.java)
                 .setParameter(0, userLoginDTO.username)
                 .setParameter(1, userLoginDTO.password)

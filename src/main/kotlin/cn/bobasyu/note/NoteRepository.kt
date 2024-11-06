@@ -3,70 +3,39 @@ package cn.bobasyu.note
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
-import cn.bobasyu.databeses.SqlGenerator
+import cn.bobasyu.databeses.SqlClient
 import cn.bobasyu.entity.NoteDto
 import cn.bobasyu.entity.NoteRecord
-import io.vertx.core.Future
+import cn.bobasyu.utils.parseJson
+import cn.bobasyu.utils.toJson
 import io.vertx.core.eventbus.Message
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.memberProperties
 
 class NoteRepositoryVerticle(
     applicationContext: ApplicationContext
 ) : AbstractNoteRepository(applicationContext) {
 
-    val mySqlClient: MySqlClient = applicationContext.mySqlClient
-
-    override suspend fun handleQueryByIdEvent(message: Message<Int>) {
+    override suspend fun handleQueryByIdEvent(message: Message<Int>) = handleEvent(message) {
         queryNoteById(message.body())
-            .onSuccess { message.reply(it as NoteRecord) }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleUpdateEvent(message: Message<NoteDto>) {
+    override suspend fun handleUpdateEvent(message: Message<NoteDto>) = handleEvent(message) {
         save(message.body())
-
-            .onSuccess { message.reply("success") }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    private fun queryNoteById(id: Int): Future<NoteRecord> {
-        return SqlGenerator(NoteRecord::class)
-            .select().where()
-            .eq(NoteRecord::noteId, id)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException("id: $id")
-                }
-                it.first() as NoteRecord
-            }
+    private fun queryNoteById(id: Int): NoteRecord {
+        val noteRecord: NoteRecord? = SqlClient.withSession { session ->
+            session.find(NoteRecord::class.java, id)
+        }.await().indefinitely()
+        if (noteRecord == null) {
+            throw NoSuchRecordInDatabaseException("id: $id")
+        }
+        return noteRecord
     }
 
-    private fun save(noteDto: NoteDto): Future<Unit> = when {
-        noteDto.noteId == null -> insert(noteDto)
-        else -> update(noteDto)
-    }
-
-    private fun update(noteDto: NoteDto): Future<Unit> {
-        val list: List<KProperty<NoteRecord>> = ArrayList()
-        NoteDto::class.memberProperties
-        return SqlGenerator(NoteRecord::class)
-            .update(list)
-            .where()
-            .eq(NoteRecord::noteId, noteDto.noteId!!)
-            .execute(mySqlClient)
-            .map {}
-    }
-
-    private fun insert(noteDto: NoteDto): Future<Unit> {
-        val list: List<KProperty<NoteRecord>> = ArrayList()
-        return SqlGenerator(NoteRecord::class)
-            .insert()
-            .values(noteDto)
-            .execute(mySqlClient)
-            .map {}
-
+    private fun save(noteDto: NoteDto)  {
+        val noteRecord: NoteRecord = noteDto.toJson().parseJson(NoteRecord::class.java)
+        SqlClient.withSession { session ->
+            session.persist(noteRecord)
+        }.await().indefinitely()
     }
 }

@@ -24,6 +24,9 @@ open class UserRecord(
     @JsonProperty("password")
     var password: String? = null,
 
+    @JsonProperty("other_properties")
+    var otherProperties: String? = "{}",
+
     @JsonProperty("create_time")
     var createTime: LocalDateTime? = LocalDateTime.now(),
 
