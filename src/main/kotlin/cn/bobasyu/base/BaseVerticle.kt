@@ -65,6 +65,16 @@ abstract class BaseRepositoryVerticle(
         registerConsumer()
     }
 
+    fun <T, U> handle(message: Message<T>, fn: (message: Message<T>) -> U) {
+        try {
+            val u: U = fn(message)
+            message.reply(u)
+        } catch (e: Exception) {
+            message.fail(500, e.message)
+            throw RuntimeException(e)
+        }
+    }
+
     /**
      * 注册总线事件消费方法
      */

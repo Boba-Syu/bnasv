@@ -3,17 +3,32 @@ package cn.bobasyu.entity
 import cn.bobasyu.utils.BaseCodec
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.vertx.core.eventbus.EventBus
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
 import java.time.LocalDateTime
 
 /**
  * 数据库查询结果封装实体类
  */
-data class UserRecord(
-    @JsonProperty("user_id") val userId: Int,
-    @JsonProperty("username") val username: String,
-    @JsonProperty("password") val password: String,
-    @JsonProperty("create_time") val createTime: LocalDateTime,
-    @JsonProperty("update_time") val updateTime: LocalDateTime
+@Entity
+open class UserRecord(
+    @Id
+    @GeneratedValue
+    @JsonProperty("user_id")
+    var userId: Int? = null,
+
+    @JsonProperty("username")
+    var username: String? = null,
+
+    @JsonProperty("password")
+    var password: String? = null,
+
+    @JsonProperty("create_time")
+    var createTime: LocalDateTime? = LocalDateTime.now(),
+
+    @JsonProperty("update_time")
+    var updateTime: LocalDateTime? = LocalDateTime.now()
 )
 
 /**

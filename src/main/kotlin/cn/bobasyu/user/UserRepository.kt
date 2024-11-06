@@ -4,13 +4,13 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
 import cn.bobasyu.databeses.MySqlClient
+import cn.bobasyu.databeses.PostgresqlClient
 import cn.bobasyu.databeses.SqlGenerator
 import cn.bobasyu.entity.UserInsertDTO
 import cn.bobasyu.entity.UserLoginDTO
 import cn.bobasyu.entity.UserRecord
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
-import io.vertx.kotlin.coroutines.await
 
 
 /**
@@ -31,38 +31,32 @@ open class UserRepositoryVerticle(
             .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) {
-        val userId = message.body()
+    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) = handle(message) {
+        val userId: Int = message.body()
         queryUserById(userId)
-            .onSuccess { message.reply(it as UserRecord) }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
+    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)  = handle(message) {
         val userInsertDTO: UserInsertDTO = message.body()
-        val ifExisted = queryUsernameExist(userInsertDTO.username).await()
+        val ifExisted = queryUsernameExist(userInsertDTO.username)
         if (ifExisted) {
             throw BaseException(message = "username${userInsertDTO.username} is existed")
         }
-
         insertUser(userInsertDTO)
-            .onSuccess { message.reply("success") }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) {
+    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) = handle(message) {
         val userLoginDTO: UserLoginDTO = message.body()
         queryUserByUsernameAndPassword(userLoginDTO)
-            .onSuccess { userList -> message.reply(userList) }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    private fun queryUsernameExist(username: String): Future<Boolean> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::username, username)
-            .execute(mySqlClient)
-            .map { return@map (it as List<*>).isNotEmpty() }
+    private fun queryUsernameExist(username: String): Boolean {
+        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+            session.createQuery("FROM UserRecord where username = :username", UserRecord::class.java)
+                .setParameter(0, username)
+                .resultList
+        }.await().indefinitely()
+        return list.isNotEmpty()
     }
 
     private fun queryUserList(): Future<List<UserRecord>> {
@@ -70,52 +64,46 @@ open class UserRepositoryVerticle(
         return mySqlClient.query(queryListSql, UserRecord::class.java)
     }
 
-    private fun queryUserById(id: Int): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::userId, id)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException("id: $id")
-                }
-                it.first()
-            }
-            .map { it as UserRecord }
+    private fun queryUserById(id: Int): UserRecord {
+        val userRecord: UserRecord? = PostgresqlClient.withSession { session ->
+            session.find(UserRecord::class.java, id)
+        }.await().indefinitely()
+        if (userRecord == null) {
+            throw NoSuchRecordInDatabaseException("id: $id")
+        }
+        return userRecord
     }
 
-    private fun queryUserByUsername(username: String): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::username, username)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException("username: $username")
-                }
-                it.first()
-            }
-            .map { it as UserRecord }
+    private fun queryUserByUsername(username: String): UserRecord {
+        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+            session.createQuery("FROM UserRecord where username = :username", UserRecord::class.java)
+                .setParameter(0, username)
+                .resultList
+        }.await().indefinitely()
+        if (list.isEmpty()) {
+            throw NoSuchRecordInDatabaseException("username: $username")
+        }
+        return list.first()
+
     }
 
-    private fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit> {
-        return SqlGenerator(UserRecord::class)
-            .insert(UserRecord::username, UserRecord::password)
-            .values(userInsertDTO.username, userInsertDTO.password)
-            .execute(mySqlClient)
-            .map {}
+    private fun insertUser(userInsertDTO: UserInsertDTO) : Unit {
+        PostgresqlClient.withSession { session ->
+            val userRecord = UserRecord(username = userInsertDTO.username, password = userInsertDTO.password)
+            session.persist(userRecord)
+        }.await().indefinitely()
     }
 
-    private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::username, userLoginDTO.username)
-            .and().eq(UserRecord::password, userLoginDTO.password)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw BaseException(message = "username or password error")
-                }
-                it.first()
-            }.map { it as UserRecord }
+    private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): UserRecord {
+        val list: List<UserRecord> = PostgresqlClient.withSession { session ->
+            session.createQuery("FROM UserRecord WHERE username = :username AND password = :password", UserRecord::class.java)
+                .setParameter(0, userLoginDTO.username)
+                .setParameter(1, userLoginDTO.password)
+                .resultList
+        }.await().indefinitely()
+        if (list.isEmpty()) {
+            throw BaseException(message = "username or password error")
+        }
+        return list.first()
     }
 }

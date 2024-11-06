@@ -16,6 +16,7 @@ import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME
 import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
+import io.vertx.core.DeploymentOptions
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
