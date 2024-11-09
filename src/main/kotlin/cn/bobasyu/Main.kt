@@ -4,6 +4,7 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
 import cn.bobasyu.entity.registerCodecs
+import cn.bobasyu.note.deployNoteVerticle
 import cn.bobasyu.user.deployUserVerticle
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
@@ -64,11 +65,10 @@ class MainVerticle(
 }
 
 
-
-
 fun main() {
     val deployServiceVerticleHandlerList = listOf(
         Vertx::deployUserVerticle,
+        Vertx::deployNoteVerticle
     )
     val mainVerticle = MainVerticle(deployServiceVerticleHandlerList)
 

@@ -20,7 +20,7 @@ import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
-import io.vertx.kotlin.coroutines.await
+import io.vertx.kotlin.coroutines.coAwait
 
 /**
  * 用户信息相关操作，包括登录、注册、查询等
@@ -50,7 +50,7 @@ class UserVerticle(
             val userLoginDTO: UserLoginDTO = body.toString().parseJson(UserLoginDTO::class.java)
             val userRecord: UserRecord =
                 eventBus.request<UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT, userLoginDTO)
-                    .await().body()
+                    .coAwait().body()
 
             // 使用jwt做鉴权
             val generateToken: String = provider.generateToken(json {
@@ -64,9 +64,9 @@ class UserVerticle(
     }
 
     private suspend fun queryByIdHandler(ctx: RoutingContext) {
-        val userId: Int = ctx.request().getParam(USER_ID).toInt()
-        val resp: Message<UserRecord> = eventBus.request<UserRecord>(USER_QUERY_BY_ID_EVENT, userId).await()
-        ctx.response().end(success(resp.body()).toJson())
+        val userId: Long = ctx.request().getParam(USER_ID).toLong()
+        val resp: Message<UserRecord> = eventBus.request<UserRecord>(USER_QUERY_BY_ID_EVENT, userId).coAwait()
+        ctx.response().end(success(resp.body().properties).toJson())
     }
 
     private fun queryRegisterHandler(ctx: RoutingContext) {

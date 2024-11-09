@@ -8,6 +8,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import org.ktorm.schema.BaseTable
+import org.ktorm.support.postgresql.InsertOrUpdateStatementBuilder
+import org.ktorm.support.postgresql.insertOrUpdate
 
 
 class DatabaseHandler(
@@ -16,7 +18,9 @@ class DatabaseHandler(
     val database: Database =
         Database.connect("jdbc:postgresql://localhost/bnasv", user = "postgres", password = "zhoubo")
 
-    fun <T : BaseTable<*>> from(table: BaseTable<T>) = database.from(table)
+    fun <T : BaseTable<*>> from(table: T) = database.from(table)
+
+    fun <T : BaseTable<*>> insertOrUpdate(table: T, block: InsertOrUpdateStatementBuilder.(T) -> Unit) = database.insertOrUpdate(table, block)
 
     fun <T : BaseTable<*>> update(table: T, block: UpdateStatementBuilder.(T) -> Unit) = database.update(table, block)
 

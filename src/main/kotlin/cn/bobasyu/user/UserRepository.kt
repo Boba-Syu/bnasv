@@ -37,7 +37,6 @@ open class UserRepositoryVerticle(
     override suspend fun handleQueryUserByIdEvent(message: Message<Long>) = handleEvent(message) {
         val userId = message.body()
         queryUserById(userId)
-        SUCCESS
     }
 
     override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) = handleEvent(message) {

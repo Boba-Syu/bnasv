@@ -107,6 +107,7 @@ open class BaseCoroutineVerticle(
         this.handler(JWTAuthHandler.create(applicationContext.provider))
         this.handler { ctx: RoutingContext ->
             // todo 验证密码
+            ctx.next()
         }
     }
 }

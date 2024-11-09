@@ -6,4 +6,5 @@ package cn.bobasyu.constant
 object NoteRepositoryConsumerConstant {
     const val NOTE_QUERY_BY_ID_EVENT: String = "db.note.query.by.id"
     const val NOTE_UPDATE_EVENT: String = "db.note.update"
+    const val NOTE_PAGE_INFO: String = "db.note.pageInfo"
 }

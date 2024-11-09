@@ -9,7 +9,7 @@ repositories {
     mavenCentral()
 }
 
-val vertxVersion = "4.4.0"
+val vertxVersion = "4.5.3"
 val jacksonVersion = "2.17.2"
 val slf4jVersion = "1.5.6"
 val mockitoVersion = "5.12.0"
@@ -30,6 +30,7 @@ dependencies {
 
     implementation("org.ktorm:ktorm-core:${ktormVersion}")
     implementation("org.ktorm:ktorm-jackson:${ktormVersion}")
+    implementation("org.ktorm:ktorm-support-postgresql:${ktormVersion}")
     implementation("org.postgresql:postgresql:42.7.4")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
