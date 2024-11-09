@@ -1,19 +1,15 @@
 package cn.bobasyu.user
 
-import cn.bobasyu.base.ApplicationContext
-import cn.bobasyu.base.BaseRepositoryVerticle
-import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.base.failure
-import cn.bobasyu.base.success
-import cn.bobasyu.entity.UserInsertDTO
-import cn.bobasyu.entity.UserLoginDTO
-import cn.bobasyu.entity.UserRecord
+import cn.bobasyu.base.*
 import cn.bobasyu.constant.UserRecordConstant.USERNAME
 import cn.bobasyu.constant.UserRecordConstant.USER_ID
 import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_INSERT_EVENT
 import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
 import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
 import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_EVENT
+import cn.bobasyu.entity.UserInsertDTO
+import cn.bobasyu.entity.UserLoginDTO
+import cn.bobasyu.entity.UserRecord
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
@@ -104,7 +100,7 @@ abstract class AbstractUserRepository(
     }
 
     abstract suspend fun handleQueryUserListEvent(message: Message<Unit>)
-    abstract suspend fun handleQueryUserByIdEvent(message: Message<Int>)
+    abstract suspend fun handleQueryUserByIdEvent(message: Message<Long>)
     abstract suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>)
     abstract suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>)
 }

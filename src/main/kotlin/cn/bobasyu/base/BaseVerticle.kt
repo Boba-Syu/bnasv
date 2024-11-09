@@ -65,6 +65,16 @@ abstract class BaseRepositoryVerticle(
         registerConsumer()
     }
 
+    fun <T, U> handleEvent(message: Message<T>, fn: (message: Message<T>) -> U) {
+        try {
+            val u: U = fn(message)
+            message.reply(u)
+        } catch (e: Exception) {
+            message.fail(500, e.message)
+            throw RuntimeException(e)
+        }
+    }
+
     /**
      * 注册总线事件消费方法
      */
@@ -78,6 +88,8 @@ open class BaseCoroutineVerticle(
     private val applicationContext: ApplicationContext
 ) : CoroutineVerticle() {
     val logger = LoggerFactory.getLogger(this::class.java)
+
+    val SUCCESS = "success"
 
     /**
      * 以协程方式异步消费总线事件方法

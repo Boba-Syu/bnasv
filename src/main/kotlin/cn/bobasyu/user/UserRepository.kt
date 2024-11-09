@@ -3,14 +3,19 @@ package cn.bobasyu.user
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
-import cn.bobasyu.databeses.MySqlClient
-import cn.bobasyu.databeses.SqlGenerator
 import cn.bobasyu.entity.UserInsertDTO
 import cn.bobasyu.entity.UserLoginDTO
 import cn.bobasyu.entity.UserRecord
-import io.vertx.core.Future
+import cn.bobasyu.entity.userRecords
+import cn.bobasyu.utils.generateId
 import io.vertx.core.eventbus.Message
-import io.vertx.kotlin.coroutines.await
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.neq
+import org.ktorm.entity.add
+import org.ktorm.entity.filter
+import org.ktorm.entity.find
+import org.ktorm.entity.toList
+import java.time.LocalDateTime
 
 
 /**
@@ -19,103 +24,84 @@ import io.vertx.kotlin.coroutines.await
 open class UserRepositoryVerticle(
     applicationContext: ApplicationContext
 ) : AbstractUserRepository(applicationContext) {
-    private val mySqlClient: MySqlClient = applicationContext.mySqlClient
+    private val databaseHandler = applicationContext.databaseHandler
 
     override suspend fun start() {
         super.start()
     }
 
-    override suspend fun handleQueryUserListEvent(message: Message<Unit>) {
+    override suspend fun handleQueryUserListEvent(message: Message<Unit>) = handleEvent(message) {
         queryUserList()
-            .onSuccess { userList: List<UserRecord> -> message.reply(userList) }
-            .onFailure { message.fail(500, it.message) }
     }
 
-    override suspend fun handleQueryUserByIdEvent(message: Message<Int>) {
+    override suspend fun handleQueryUserByIdEvent(message: Message<Long>) = handleEvent(message) {
         val userId = message.body()
         queryUserById(userId)
-            .onSuccess { message.reply(it as UserRecord) }
-            .onFailure { message.fail(500, it.message) }
+        SUCCESS
     }
 
-    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) {
+    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) = handleEvent(message) {
         val userInsertDTO: UserInsertDTO = message.body()
-        val ifExisted = queryUsernameExist(userInsertDTO.username).await()
+        val ifExisted = queryUsernameExist(userInsertDTO.username)
         if (ifExisted) {
             throw BaseException(message = "username${userInsertDTO.username} is existed")
         }
-
         insertUser(userInsertDTO)
-            .onSuccess { message.reply("success") }
-            .onFailure { message.fail(500, it.message) }
+        SUCCESS
     }
 
-    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) {
-        val userLoginDTO: UserLoginDTO = message.body()
-        queryUserByUsernameAndPassword(userLoginDTO)
-            .onSuccess { userList -> message.reply(userList) }
-            .onFailure { message.fail(500, it.message) }
+    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) =
+        handleEvent(message) {
+            val userLoginDTO: UserLoginDTO = message.body()
+            queryUserByUsernameAndPassword(userLoginDTO)
+        }
+
+    private fun queryUsernameExist(username: String): Boolean {
+        val userRecord: UserRecord? = databaseHandler.userRecords.find { it.username eq username }
+        return userRecord != null
     }
 
-    private fun queryUsernameExist(username: String): Future<Boolean> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::username, username)
-            .execute(mySqlClient)
-            .map { return@map (it as List<*>).isNotEmpty() }
+    private fun queryUserList(): List<UserRecord> {
+        val list: List<UserRecord> = databaseHandler.userRecords.filter { it.userId neq 0 }.toList()
+        return list
     }
 
-    private fun queryUserList(): Future<List<UserRecord>> {
-        val queryListSql: String = SqlGenerator(UserRecord::class).select().generate()
-        return mySqlClient.query(queryListSql, UserRecord::class.java)
+    private fun queryUserById(id: Long): UserRecord {
+        val userRecord: UserRecord? = databaseHandler.userRecords.find { it.userId eq id }
+        if (userRecord == null) {
+            throw NoSuchRecordInDatabaseException("id: $id")
+        }
+        return userRecord
     }
 
-    private fun queryUserById(id: Int): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::userId, id)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException("id: $id")
-                }
-                it.first()
-            }
-            .map { it as UserRecord }
+    private fun queryUserByUsername(username: String): UserRecord {
+        val userRecord: UserRecord? = databaseHandler.userRecords.find { it.username eq username }
+        if (userRecord == null) {
+            throw NoSuchRecordInDatabaseException("username: $username")
+        }
+        return userRecord
     }
 
-    private fun queryUserByUsername(username: String): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class)
-            .select()
-            .where().eq(UserRecord::username, username)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw NoSuchRecordInDatabaseException("username: $username")
-                }
-                it.first()
-            }
-            .map { it as UserRecord }
+    private fun insertUser(userInsertDTO: UserInsertDTO) {
+        val userRecord = UserRecord {
+            userId = generateId()
+            username = userInsertDTO.username
+            password = userInsertDTO.password
+            otherProperties = hashMapOf()
+            createTime = LocalDateTime.now()
+            updateTime = LocalDateTime.now()
+        }
+        databaseHandler.userRecords.add(userRecord)
     }
 
-    private fun insertUser(userInsertDTO: UserInsertDTO): Future<Unit> {
-        return SqlGenerator(UserRecord::class)
-            .insert(UserRecord::username, UserRecord::password)
-            .values(userInsertDTO.username, userInsertDTO.password)
-            .execute(mySqlClient)
-            .map {}
-    }
-
-    private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): Future<UserRecord> {
-        return SqlGenerator(UserRecord::class).select()
-            .where().eq(UserRecord::username, userLoginDTO.username)
-            .and().eq(UserRecord::password, userLoginDTO.password)
-            .execute(mySqlClient)
-            .map {
-                if ((it as List<*>).isEmpty()) {
-                    throw BaseException(message = "username or password error")
-                }
-                it.first()
-            }.map { it as UserRecord }
+    private fun queryUserByUsernameAndPassword(userLoginDTO: UserLoginDTO): UserRecord {
+        val userRecord: UserRecord? = databaseHandler.userRecords.find {
+            it.username eq userLoginDTO.username
+            it.password eq userLoginDTO.password
+        }
+        if (userRecord == null) {
+            throw BaseException(message = "username or password error")
+        }
+        return userRecord
     }
 }

@@ -1,15 +1,10 @@
 package cn.bobasyu.note
 
-import cn.bobasyu.base.ApplicationContext
-import cn.bobasyu.base.BaseRepositoryVerticle
-import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.base.failure
-import cn.bobasyu.base.success
-import cn.bobasyu.entity.NoteRecord
+import cn.bobasyu.base.*
 import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
 import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import cn.bobasyu.entity.NoteDto
-import cn.bobasyu.user.UserRepositoryVerticle
+import cn.bobasyu.entity.NoteRecord
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
@@ -20,7 +15,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.await
 
 class NoteHandler(
-    val applicationContext: ApplicationContext
+    private val applicationContext: ApplicationContext
 ) : BaseServiceVerticle(applicationContext) {
 
     private val eventBus: EventBus by lazy { vertx.eventBus() }
@@ -60,7 +55,7 @@ abstract class AbstractNoteRepository(
     /**
      * 根据Id查询事件
      */
-    abstract suspend fun handleQueryByIdEvent(message: Message<Int>)
+    abstract suspend fun handleQueryByIdEvent(message: Message<Long>)
 
     /**
      * 更新事件

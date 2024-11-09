@@ -13,6 +13,7 @@ val vertxVersion = "4.4.0"
 val jacksonVersion = "2.17.2"
 val slf4jVersion = "1.5.6"
 val mockitoVersion = "5.12.0"
+val ktormVersion = "4.1.1"
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -26,7 +27,10 @@ dependencies {
     implementation("io.vertx:vertx-auth-jwt:${vertxVersion}")
     implementation("io.vertx:vertx-auth-common:${vertxVersion}")
     implementation("io.vertx:vertx-lang-kotlin-coroutines:${vertxVersion}")
-    implementation("io.vertx:vertx-mysql-client:${vertxVersion}")
+
+    implementation("org.ktorm:ktorm-core:${ktormVersion}")
+    implementation("org.ktorm:ktorm-jackson:${ktormVersion}")
+    implementation("org.postgresql:postgresql:42.7.4")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}")
