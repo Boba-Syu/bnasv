@@ -14,7 +14,7 @@
 
             <!-- Credentials -->
             <property name="jakarta.persistence.jdbc.user" value="postgres"/>
-            <property name="jakarta.persistence.jdbc.password" value="postgres"/>
+            <property name="jakarta.persistence.jdbc.password" value="zhoubo"/>
 
             <!-- The Vert.x SQL Client connection pool size -->
             <property name="hibernate.connection.pool_size" value="10"/>

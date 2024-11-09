@@ -2,7 +2,6 @@ package cn.bobasyu.note
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
-import cn.bobasyu.databeses.MySqlClient
 import cn.bobasyu.databeses.SqlClient
 import cn.bobasyu.entity.NoteDto
 import cn.bobasyu.entity.NoteRecord
@@ -13,6 +12,7 @@ import io.vertx.core.eventbus.Message
 class NoteRepositoryVerticle(
     applicationContext: ApplicationContext
 ) : AbstractNoteRepository(applicationContext) {
+    private val sqlClient: SqlClient = applicationContext.sqlClient
 
     override suspend fun handleQueryByIdEvent(message: Message<Int>) = handleEvent(message) {
         queryNoteById(message.body())
@@ -23,7 +23,7 @@ class NoteRepositoryVerticle(
     }
 
     private fun queryNoteById(id: Int): NoteRecord {
-        val noteRecord: NoteRecord? = SqlClient.withSession { session ->
+        val noteRecord: NoteRecord? = sqlClient.withSession { session ->
             session.find(NoteRecord::class.java, id)
         }.await().indefinitely()
         if (noteRecord == null) {
@@ -32,9 +32,9 @@ class NoteRepositoryVerticle(
         return noteRecord
     }
 
-    private fun save(noteDto: NoteDto)  {
+    private fun save(noteDto: NoteDto) {
         val noteRecord: NoteRecord = noteDto.toJson().parseJson(NoteRecord::class.java)
-        SqlClient.withSession { session ->
+        sqlClient.withSession { session ->
             session.persist(noteRecord)
         }.await().indefinitely()
     }

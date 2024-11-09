@@ -1,7 +1,7 @@
 package cn.bobasyu.base
 
 import cn.bobasyu.auth.JwtAuth
-import cn.bobasyu.databeses.MySqlClient
+import cn.bobasyu.databeses.SqlClient
 import io.vertx.core.Vertx
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
@@ -28,7 +28,7 @@ class ApplicationContext(vertx: Vertx) {
     /**
      * 数据库链接
      */
-    val mySqlClient: MySqlClient by lazy { MySqlClient(vertx) }
+    val sqlClient: SqlClient by lazy { SqlClient() }
 
     /**
      * Jwt鉴权
@@ -41,6 +41,6 @@ class ApplicationContext(vertx: Vertx) {
      * 关闭上下文
      */
     fun close() {
-        mySqlClient.close()
+        sqlClient.close()
     }
 }

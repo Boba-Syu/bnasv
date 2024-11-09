@@ -5,11 +5,13 @@ import jakarta.persistence.Persistence
 import org.hibernate.reactive.mutiny.Mutiny.Session
 import org.hibernate.reactive.mutiny.Mutiny.SessionFactory
 
-object SqlClient {
-    val factory: SessionFactory by lazy {
+class SqlClient {
+    private val factory: SessionFactory by lazy {
         Persistence.createEntityManagerFactory("postgresql-example")
             .unwrap(SessionFactory::class.java)
     }
 
     fun <T> withSession(var1: (Session) -> Uni<T>): Uni<T> = factory.withSession(var1)
+
+    fun close() = factory.close()
 }

@@ -31,6 +31,7 @@ dependencies {
 
     implementation("io.vertx:vertx-pg-client:${vertxVersion}")
     implementation("org.hibernate.reactive:hibernate-reactive-core:${hibernateReactiveVersion}")
+    implementation("org.hibernate:hibernate-entitymanager:5.6.15.Final")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}")
