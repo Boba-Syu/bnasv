@@ -11,4 +11,5 @@ fun EventBus.registerCodecs(): EventBus = this.apply {
     registerDefaultCodec(PageInfo::class.java, BaseCodec(PageInfo::class.java))
     registerUserCodecs()
     registerNoteCodecs()
+    registerTodoCodecs()
 }

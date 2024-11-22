@@ -1,6 +1,7 @@
 package cn.bobasyu.note
 
 import cn.bobasyu.base.*
+import cn.bobasyu.constant.NoteParamConstant
 import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
 import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
 import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
@@ -12,6 +13,8 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.core.json.json
+import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.coroutines.coAwait
 
 class NoteHandler(
@@ -37,10 +40,17 @@ class NoteHandler(
     }
 
     private suspend fun queryById(ctx: RoutingContext) {
-        val noteId: Long = ctx.request().getParam("noteId").toLong()
+        val noteId: Long = ctx.request().getParam(NoteParamConstant.NOTE_ID).toLong()
         val resp: Message<NoteRecord> = eventBus.request<NoteRecord>(NOTE_QUERY_BY_ID_EVENT, noteId).coAwait()
-        val noteVo = NoteVo(resp.body())
-        ctx.response().end(success(noteVo).toJson())
+        val result = json {
+            obj { NoteParamConstant.NOTE_ID to resp.body().noteId }
+            obj { NoteParamConstant.TITLE to resp.body().title }
+            obj { NoteParamConstant.CONTENT to resp.body().content }
+            obj { NoteParamConstant.OTHER_PROPERTIES to resp.body().otherProperties }
+            obj { NoteParamConstant.CREATE_TIME to resp.body().createTime }
+            obj { NoteParamConstant.UPDATE_TIME to resp.body().updateTime }
+        }
+        ctx.response().end(success(result).toJson())
     }
 
     private fun pageInfo(ctx: RoutingContext) {
@@ -49,7 +59,16 @@ class NoteHandler(
             val resp: Message<PageInfo<NoteRecord>> =
                 eventBus.request<PageInfo<NoteRecord>>(NOTE_PAGE_INFO, notePageDto)
                     .coAwait()
-            val pageInfo: PageInfo<NoteVo> = PageInfo(resp.body().list.map { NoteVo(it) }, resp.body().total)
+            val pageInfo = PageInfo(resp.body().list.map {
+                json {
+                    obj { NoteParamConstant.NOTE_ID to it.noteId }
+                    obj { NoteParamConstant.TITLE to it.title }
+                    obj { NoteParamConstant.CONTENT to it.content }
+                    obj { NoteParamConstant.OTHER_PROPERTIES to it.otherProperties }
+                    obj { NoteParamConstant.CREATE_TIME to it.createTime }
+                    obj { NoteParamConstant.UPDATE_TIME to it.updateTime }
+                }
+            }, resp.body().total)
             ctx.response().end(success(pageInfo).toJson())
 
         }
