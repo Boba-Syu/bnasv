@@ -2,6 +2,7 @@ package cn.bobasyu.base
 
 import cn.bobasyu.auth.JwtAuth
 import cn.bobasyu.databeses.DatabaseHandler
+import cn.bobasyu.http.HttpClient
 import io.vertx.core.Vertx
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
@@ -37,10 +38,12 @@ class ApplicationContext(vertx: Vertx) {
 
     val provider: JWTAuth by lazy { jwtAuth.provider }
 
+    val httpClient: HttpClient by lazy { HttpClient(vertx) }
+
     /**
      * 关闭上下文
      */
     fun close() {
-
+        httpClient.close()
     }
 }

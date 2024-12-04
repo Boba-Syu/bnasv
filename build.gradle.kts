@@ -14,6 +14,7 @@ val jacksonVersion = "2.17.2"
 val slf4jVersion = "1.5.6"
 val mockitoVersion = "5.12.0"
 val ktormVersion = "4.1.1"
+val okhttpVersion = "4.12.0"
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -40,6 +41,8 @@ dependencies {
     implementation("org.slf4j:slf4j-jdk14:${slf4jVersion}")
 
     implementation("org.mockito:mockito-core:${mockitoVersion}")
+
+    implementation("com.squareup.okhttp3:okhttp:${okhttpVersion}")
 }
 
 tasks.test {
