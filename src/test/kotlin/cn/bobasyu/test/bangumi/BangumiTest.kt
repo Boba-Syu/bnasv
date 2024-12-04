@@ -16,7 +16,7 @@ class BangumiTest {
     @Test
     fun searchTest(vertx: Vertx, testContext: VertxTestContext) {
         val bangumiRepository = BangumiRepository(applicationText(vertx))
-        val resp = bangumiRepository.searchByKeyword("kon")
+        val resp = bangumiRepository.searchByKeyword("86")
         println(resp)
         testContext.completeNow()
     }
