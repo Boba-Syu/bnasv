@@ -39,12 +39,16 @@ class HttpClient(
      * POST请求
      */
     fun post(url: String, params: JsonObject, headers: Map<String, String>): String? {
-        log.info("HTTP POST: url={}, params={}", url, params)
-        val request: Request = with(Request.Builder().url(url)) {
-            headers.entries.forEach { (k, v) -> addHeader(k, v) }
-            post(params.toString().toRequestBody())
-            build()
-        }
+        val request = buildPostRequest(url, headers, params)
+        return gerResponse(request)
+    }
+
+    fun get(url: String, params: JsonObject?, headers: Map<String, String>): String? {
+        val request = buildGetRequest(url, headers, params)
+        return gerResponse(request)
+    }
+
+    private fun gerResponse(request: Request): String? {
         val call: Call = client.newCall(request)
         var resp: String? = null
         call.execute().use { response ->
@@ -53,5 +57,35 @@ class HttpClient(
             }
         }
         return resp
+    }
+
+    private fun buildPostRequest(url: String, headers: Map<String, String>, params: JsonObject): Request {
+        log.info("HTTP POST: url={}, params={}", url, params)
+        return with(Request.Builder().url(url)) {
+            headers.entries.forEach { (k, v) -> addHeader(k, v) }
+            post(params.toString().toRequestBody())
+            build()
+        }
+    }
+
+    private fun buildGetRequest(url: String, headers: Map<String, String>, params: JsonObject?): Request {
+        val urlBuilder = StringBuilder()
+        urlBuilder.append(url)
+
+        if (params != null && !params.isEmpty) {
+            urlBuilder.append(url).append("?")
+            params.forEach { (k, v) ->
+                urlBuilder.append("$k=$v")
+                urlBuilder.append("&")
+            }
+        }
+        val finalUrl = urlBuilder.removeSuffix("&").toString()
+        log.info("HTTP GET: url={}, params={}", finalUrl, params)
+
+        return with(Request.Builder().url(finalUrl)) {
+            headers.entries.forEach { (k, v) -> addHeader(k, v) }
+            get()
+            build()
+        }
     }
 }
