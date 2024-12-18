@@ -15,6 +15,7 @@ val slf4jVersion = "1.5.6"
 val mockitoVersion = "5.12.0"
 val ktormVersion = "4.1.1"
 val okhttpVersion = "4.12.0"
+val snakeyamlVersion = "2.3"
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -38,10 +39,9 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}")
 
+    implementation("org.yaml:snakeyaml:${snakeyamlVersion}")
     implementation("org.slf4j:slf4j-jdk14:${slf4jVersion}")
-
     implementation("org.mockito:mockito-core:${mockitoVersion}")
-
     implementation("com.squareup.okhttp3:okhttp:${okhttpVersion}")
 }
 

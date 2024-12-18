@@ -1,6 +1,7 @@
 package cn.bobasyu
 
 import cn.bobasyu.base.ApplicationContext
+import cn.bobasyu.base.ConfigName
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
 import cn.bobasyu.entity.registerCodecs
@@ -17,15 +18,22 @@ import java.util.*
 
 typealias DeployServiceVerticleHandler = Vertx.(ApplicationContext) -> Vertx
 
+@ConfigName("server")
+data class ServerConfig(
+    val port: Int
+)
+
 /**
  * MainVerticle 注册全部服务
  */
 class MainVerticle(
     private val deployServiceVerticleHandlerList: List<DeployServiceVerticleHandler> = Collections.emptyList(),
-    private val port: Int = 8080
+    private val applicationContext: ApplicationContext,
 ) : CoroutineVerticle() {
     private val server: HttpServer by lazy { vertx.createHttpServer() }
-    private val applicationContext: ApplicationContext by lazy { ApplicationContext(vertx) }
+
+    private val serverConfig: ServerConfig = applicationContext.config[ServerConfig::class]
+    private val port get() = serverConfig.port
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
@@ -70,9 +78,15 @@ fun main() {
         Vertx::deployUserVerticle,
         Vertx::deployNoteVerticle
     )
-    val mainVerticle = MainVerticle(deployServiceVerticleHandlerList)
 
-    Vertx.vertx().apply {
+    val vertx = Vertx.vertx()
+    val applicationContext = ApplicationContext(vertx)
+    val mainVerticle = MainVerticle(
+        deployServiceVerticleHandlerList = deployServiceVerticleHandlerList,
+        applicationContext = applicationContext
+    )
+
+    vertx.apply {
         eventBus().registerCodecs()
         deployVerticle(mainVerticle)
     }

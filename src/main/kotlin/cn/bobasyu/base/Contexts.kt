@@ -12,7 +12,10 @@ import io.vertx.ext.web.sstore.LocalSessionStore
 /**
  * 上下文封装，各个业务verticle可能需要通道的对象
  */
-class ApplicationContext(vertx: Vertx) {
+class ApplicationContext(
+    private val vertx: Vertx,
+    val configPath: String = "application.yaml",
+) {
     /**
      * 路由
      */
@@ -29,16 +32,23 @@ class ApplicationContext(vertx: Vertx) {
     /**
      * 数据库链接
      */
-    val databaseHandler by lazy { DatabaseHandler(vertx) }
+    val databaseHandler by lazy { DatabaseHandler(this) }
 
     /**
      * Jwt鉴权
      */
     val jwtAuth: JwtAuth by lazy { JwtAuth(vertx) }
-
     val provider: JWTAuth by lazy { jwtAuth.provider }
 
+    /**
+     * HTTP客户端封装
+     */
     val httpClient: HttpClient by lazy { HttpClient(vertx) }
+
+    /**
+     * 全局配置值
+     */
+    val config: ApplicationConfig by lazy { ApplicationConfig(configPath) }
 
     /**
      * 关闭上下文

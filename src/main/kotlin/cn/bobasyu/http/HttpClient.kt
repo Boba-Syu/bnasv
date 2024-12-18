@@ -7,13 +7,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.slf4j.LoggerFactory
+import java.io.Closeable
 
 /**
  * HTTP客户端封装
  */
 class HttpClient(
     val vertx: Vertx,
-) {
+) : Closeable {
     companion object {
         private val log = LoggerFactory.getLogger(HttpClient::class.java)
     }
@@ -21,8 +22,6 @@ class HttpClient(
     private val client by lazy {
         OkHttpClient.Builder().build()
     }
-
-    fun close() {}
 
     /**
      * POST请求
@@ -43,11 +42,17 @@ class HttpClient(
         return gerResponse(request)
     }
 
+    /**
+     * GET请求
+     */
     fun get(url: String, params: JsonObject?, headers: Map<String, String>): String? {
         val request = buildGetRequest(url, headers, params)
         return gerResponse(request)
     }
 
+    /**
+     * 发送请求并获取响应
+     */
     private fun gerResponse(request: Request): String? {
         val call: Call = client.newCall(request)
         var resp: String? = null
@@ -59,6 +64,9 @@ class HttpClient(
         return resp
     }
 
+    /**
+     * 构建POST请求对象
+     */
     private fun buildPostRequest(url: String, headers: Map<String, String>, params: JsonObject): Request {
         log.info("HTTP POST: url={}, params={}", url, params)
         return with(Request.Builder().url(url)) {
@@ -68,6 +76,9 @@ class HttpClient(
         }
     }
 
+    /**
+     * 构建GET请求对象
+     */
     private fun buildGetRequest(url: String, headers: Map<String, String>, params: JsonObject?): Request {
         val urlBuilder = StringBuilder()
         urlBuilder.append(url)
@@ -88,4 +99,6 @@ class HttpClient(
             build()
         }
     }
+
+    override fun close() {}
 }

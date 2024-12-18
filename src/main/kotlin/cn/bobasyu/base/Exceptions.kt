@@ -21,3 +21,8 @@ class UnauthorizedException(
     message: String = "",
     cause: Throwable? = null
 ) : BaseException(ResultCode.UNAUTHORIZED.code, "Unauthorized.$message", cause)
+
+class CommonBaseException(
+    message: String,
+    cause: Throwable? = null
+) : BaseException(code = 500, message = message, cause = cause)

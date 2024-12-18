@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+database:
+  url: jdbc:postgresql://localhost/bnasv
+  user: postgres
+  password: zhoubo
+
+bangumi:
+  baseUrl: https://api.bgm.tv
+  authorization: Bearer 1Rs0aoHNICSCmTq6T6iITYvirVqZsMHG29ZZVtDj
+  userAgent: bobasyu/my-private-project
