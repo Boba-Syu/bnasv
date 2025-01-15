@@ -1,9 +1,9 @@
 package cn.bobasyu.base
 
+import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.toJson
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.EventBus
-import io.vertx.core.eventbus.Message
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
@@ -11,6 +11,7 @@ import io.vertx.ext.web.handler.JWTAuthHandler
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.launch
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 abstract class BaseServiceVerticle(
@@ -18,6 +19,33 @@ abstract class BaseServiceVerticle(
 ) : BaseCoroutineVerticle(applicationContext) {
     override suspend fun start() {
         setUserRouter()
+    }
+
+    /**
+     * HTTP请求handler封装
+     */
+    inline fun <reified REQ, RESP> Route.doHandler(crossinline fn: suspend (REQ) -> RESP) {
+        coroutineHandler { ctx ->
+            val requestBodyHandler = requestBodyHandler<REQ>()
+            ctx.request().asyncRequestBodyHandler(ctx) { body: Buffer ->
+                val req = requestBodyHandler(body)
+                when (val resp: RESP = fn(req as REQ)) {
+                    is Unit -> ctx.end(success().toJson())
+                    else -> ctx.end(success(resp).toJson())
+                }
+            }
+        }
+    }
+
+    /**
+     * 带有请求体的http请求处理
+     */
+    inline fun <reified REQ> requestBodyHandler(): (Buffer) -> Any? {
+        val requestBodyHandler = when (REQ::class.java) {
+            Unit::class.java -> { _: Buffer? -> Unit }
+            else -> { body: Buffer -> body.toString().parseJson(REQ::class.java) }
+        }
+        return requestBodyHandler
     }
 
     /**
@@ -65,16 +93,6 @@ abstract class BaseRepositoryVerticle(
         registerConsumer()
     }
 
-    fun <T, U> handleEvent(message: Message<T>, fn: (message: Message<T>) -> U) {
-        try {
-            val u: U = fn(message)
-            message.reply(u)
-        } catch (e: Exception) {
-            message.fail(500, e.message)
-            throw RuntimeException(e)
-        }
-    }
-
     /**
      * 注册总线事件消费方法
      */
@@ -87,16 +105,40 @@ abstract class BaseRepositoryVerticle(
 open class BaseCoroutineVerticle(
     private val applicationContext: ApplicationContext
 ) : CoroutineVerticle() {
-    val logger = LoggerFactory.getLogger(this::class.java)
+    val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
-    val SUCCESS = "success"
+    companion object {
+        const val SUCCESS = "success"
+    }
 
     /**
      * 以协程方式异步消费总线事件方法
      */
-    fun <T> EventBus.asyncConsumer(address: String, handler: suspend (Message<T>) -> Unit) {
-        consumer(address) {
-            launch(vertx.dispatcher()) { handler(it) }
+    fun <REQ, RESP> EventBus.asyncConsumer(address: String, handler: (REQ) -> RESP) {
+        consumer(address) { message ->
+            try {
+                val body: REQ = message.body()
+                val resp: RESP? = handler(body)
+                message.reply(resp)
+            } catch (e: Exception) {
+                message.fail(500, e.message)
+                throw RuntimeException(e)
+            }
+        }
+    }
+
+    /**
+     * 以协程方式异步消费总线事件方法
+     */
+    fun <RESP> EventBus.asyncConsumer(address: String, handler: () -> RESP) {
+        consumer<Unit>(address) { message ->
+            try {
+                val resp: RESP? = handler()
+                message.reply(resp)
+            } catch (e: Exception) {
+                message.fail(500, e.message)
+                throw RuntimeException(e)
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package cn.bobasyu.utils
 
 import cn.bobasyu.base.HttpResult
 import cn.bobasyu.utils.ObjectJson.objectMapper
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vertx.core.buffer.Buffer
@@ -12,6 +13,7 @@ import java.text.SimpleDateFormat
 object ObjectJson {
     val objectMapper by lazy {
         val mapper = jacksonObjectMapper()
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         mapper.dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
         mapper.registerModule(JavaTimeModule())
         mapper

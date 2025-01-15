@@ -3,6 +3,7 @@ package cn.bobasyu.entity
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
+import java.io.Serializable
 import java.time.LocalDate
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
@@ -29,7 +30,7 @@ data class BangumiImages(
     val small: String = "",
 
     val grid: String = "",
-)
+) : Serializable
 
 data class BangumiSubject(
     val id: Int,
@@ -61,10 +62,10 @@ data class BangumiSubject(
      */
     @JsonProperty("total_episodes")
     val totalEpisodes: Int? = null,
-)
+) : Serializable
 
 data class BangumiSearchDto(
     val keyword: String,
 
     val types: List<BangumiSubjectType>? = null
-)
+) : Serializable

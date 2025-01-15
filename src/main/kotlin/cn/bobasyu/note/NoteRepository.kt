@@ -1,10 +1,13 @@
 package cn.bobasyu.note
 
 import cn.bobasyu.base.ApplicationContext
+import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import cn.bobasyu.entity.*
 import cn.bobasyu.utils.generateId
-import io.vertx.core.eventbus.Message
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
 import org.ktorm.entity.filter
@@ -12,24 +15,13 @@ import org.ktorm.entity.find
 
 class NoteRepositoryVerticle(
     applicationContext: ApplicationContext
-) : AbstractNoteRepository(applicationContext) {
-
+) : BaseRepositoryVerticle(applicationContext) {
     private val databaseHandler = applicationContext.databaseHandler
 
-    override suspend fun handleQueryByIdEvent(message: Message<Long>) = handleEvent(message) {
-        queryNoteById(message.body())
-    }
-
-    override suspend fun handleUpdateEvent(message: Message<NoteDto>) = handleEvent(message) {
-        save(message.body())
-        SUCCESS
-    }
-
-    override suspend fun handlePageInfoEvent(message: Message<NotePageDto>) = handleEvent(message) {
-        val notePageDto = message.body()
-        val total = count(notePageDto)
-        val noteRecordList: List<NoteRecord> = pageInfo(message.body())
-        PageInfo(list = noteRecordList, total = total)
+    override fun registerConsumer() = with(vertx.eventBus()) {
+        asyncConsumer<Long, NoteRecord>(NOTE_QUERY_BY_ID_EVENT) { queryNoteById(it) }
+        asyncConsumer<NoteDto, Unit>(NOTE_UPDATE_EVENT) { save(it) }
+        asyncConsumer<NotePageDto, List<NoteRecord>>(NOTE_PAGE_INFO) { pageInfo(it) }
     }
 
     private fun count(notePageDto: NotePageDto): Int {

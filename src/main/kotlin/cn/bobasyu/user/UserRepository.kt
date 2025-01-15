@@ -2,13 +2,18 @@ package cn.bobasyu.user
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseException
+import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.entity.UserInsertDTO
 import cn.bobasyu.entity.UserLoginDTO
 import cn.bobasyu.entity.UserRecord
 import cn.bobasyu.entity.userRecords
 import cn.bobasyu.utils.generateId
-import io.vertx.core.eventbus.Message
+import io.vertx.core.eventbus.EventBus
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.neq
 import org.ktorm.entity.add
@@ -23,38 +28,23 @@ import java.time.LocalDateTime
  */
 open class UserRepositoryVerticle(
     applicationContext: ApplicationContext
-) : AbstractUserRepository(applicationContext) {
+) : BaseRepositoryVerticle(applicationContext) {
+    private val eventBus: EventBus by lazy { vertx.eventBus() }
     private val databaseHandler = applicationContext.databaseHandler
+
+    /**
+     * 注册总线事件消费方法
+     */
+    override fun registerConsumer() = with(eventBus) {
+        asyncConsumer<List<UserRecord>>(USER_QUERY_EVENT) { queryUserList() }
+        asyncConsumer<Long, UserRecord> (USER_QUERY_BY_ID_EVENT){ queryUserById(it) }
+        asyncConsumer<UserInsertDTO, Unit>(USER_INSERT_EVENT) { insertUser(it) }
+        asyncConsumer<UserLoginDTO, UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT) { queryUserByUsernameAndPassword(it) }
+    }
 
     override suspend fun start() {
         super.start()
     }
-
-    override suspend fun handleQueryUserListEvent(message: Message<Unit>) = handleEvent(message) {
-        queryUserList()
-    }
-
-    override suspend fun handleQueryUserByIdEvent(message: Message<Long>) = handleEvent(message) {
-        val userId = message.body()
-        queryUserById(userId)
-    }
-
-    override suspend fun handleInsertUserEvent(message: Message<UserInsertDTO>) = handleEvent(message) {
-        val userInsertDTO: UserInsertDTO = message.body()
-        val ifExisted = queryUsernameExist(userInsertDTO.username)
-        if (ifExisted) {
-            throw BaseException(message = "username${userInsertDTO.username} is existed")
-        }
-        insertUser(userInsertDTO)
-        SUCCESS
-    }
-
-    override suspend fun handleQueryUserByUsernameAndPasswordEvent(message: Message<UserLoginDTO>) =
-        handleEvent(message) {
-            val userLoginDTO: UserLoginDTO = message.body()
-            queryUserByUsernameAndPassword(userLoginDTO)
-        }
-
     private fun queryUsernameExist(username: String): Boolean {
         val userRecord: UserRecord? = databaseHandler.userRecords.find { it.username eq username }
         return userRecord != null

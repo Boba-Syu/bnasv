@@ -12,4 +12,5 @@ fun EventBus.registerCodecs(): EventBus = this.apply {
     registerUserCodecs()
     registerNoteCodecs()
     registerTodoCodecs()
+    registerBangumiCalendarCodecs()
 }
