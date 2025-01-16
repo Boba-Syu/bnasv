@@ -7,6 +7,7 @@ import cn.bobasyu.constant.BangumiConsumerConstant.FIND_BY_KEYWORD
 import cn.bobasyu.entity.BangumiCalendar
 import cn.bobasyu.entity.BangumiCalendarWeekdayEnum
 import cn.bobasyu.entity.BangumiSearchDto
+import cn.bobasyu.entity.BangumiSubject
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.EventBus
 import io.vertx.kotlin.coroutines.coAwait
@@ -20,7 +21,7 @@ class BangumiHandler(
 
     override fun setUserRouter() = with(applicationContext.router) {
         get("${baseUrl}/calendar").doHandler<Unit, Map<BangumiCalendarWeekdayEnum, BangumiCalendar>?> { calendar() }
-        get("${baseUrl}/search").doHandler<BangumiSearchDto, String> { search(it) }
+        get("${baseUrl}/search").doHandler<BangumiSearchDto, List<BangumiSubject>> { search(it) }
     }
 
     private suspend fun calendar(): Map<BangumiCalendarWeekdayEnum, BangumiCalendar>? {
@@ -28,8 +29,8 @@ class BangumiHandler(
         return resp.body()
     }
 
-    private suspend fun search(bangumiSearchDto: BangumiSearchDto): String {
-        val resp = eventBus.request<String>(FIND_BY_KEYWORD, bangumiSearchDto).coAwait()
+    private suspend fun search(bangumiSearchDto: BangumiSearchDto): List<BangumiSubject> {
+        val resp = eventBus.request<List<BangumiSubject>>(FIND_BY_KEYWORD, bangumiSearchDto).coAwait()
         return resp.body()
     }
 }

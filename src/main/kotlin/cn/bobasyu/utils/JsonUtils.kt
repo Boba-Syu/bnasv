@@ -39,6 +39,10 @@ fun <T> String.parseJsonToHttpResult(type: Class<T>): HttpResult<T> =
 fun <T> String.parseJsonToList(type: Class<T>): List<T> =
     objectMapper.readValue(this, objectMapper.typeFactory.constructParametricType(List::class.java, type))
 
+fun  String.parseJsonToMap(): Map<String, Any> =
+    objectMapper.readValue(this, objectMapper.typeFactory.constructRawMapType(Map::class.java))
+
+
 /**
  * json序列化器类，在eventBus注册中使用
  */

@@ -50,7 +50,7 @@ data class BangumiSubject(
 
     val images: BangumiImages = BangumiImages(),
 
-    val infoBox: String = "",
+    val infobox: String = "",
 
     /**
      * 书籍条目的册数

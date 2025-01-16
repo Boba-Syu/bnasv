@@ -7,7 +7,11 @@ import cn.bobasyu.constant.BangumiConsumerConstant
 import cn.bobasyu.entity.BangumiCalendar
 import cn.bobasyu.entity.BangumiCalendarWeekdayEnum
 import cn.bobasyu.entity.BangumiSearchDto
+import cn.bobasyu.entity.BangumiSubject
+import cn.bobasyu.utils.ObjectJson
 import cn.bobasyu.utils.parseJsonToList
+import cn.bobasyu.utils.parseJsonToMap
+import cn.bobasyu.utils.toJson
 import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
@@ -38,7 +42,7 @@ class BangumiRepository(
 
     override fun registerConsumer() = with(vertx.eventBus()) {
         asyncConsumer<Map<BangumiCalendarWeekdayEnum, BangumiCalendar>>(BangumiConsumerConstant.CALENDAR) { calendar() }
-        asyncConsumer<BangumiSearchDto, String>(BangumiConsumerConstant.FIND_BY_KEYWORD) { searchByKeyword(it) }
+        asyncConsumer<BangumiSearchDto, List<BangumiSubject>>(BangumiConsumerConstant.FIND_BY_KEYWORD) { searchByKeyword(it) }
     }
 
     /**
@@ -54,14 +58,18 @@ class BangumiRepository(
     /**
      * 根据关键词查询词条
      */
-    fun searchByKeyword(bangumiSearchDto: BangumiSearchDto): String {
+    fun searchByKeyword(bangumiSearchDto: BangumiSearchDto): List<BangumiSubject> {
         val url = "${bangumiConfig.baseUrl}/v0/search/subjects"
         val params: JsonObject = json {
-            if (!bangumiSearchDto.types.isNullOrEmpty()) {
-                obj("types" to bangumiSearchDto.types)
-            }
-            obj("keyword" to bangumiSearchDto.keyword)
+            obj(
+                "filter" to obj (
+                   "type" to (bangumiSearchDto.types?.map { it.code }?.toList() ?: listOf())
+                ),
+                "keyword" to bangumiSearchDto.keyword
+            )
         }
-        return httpClient.post(url, params, headers)!!
+        val resp: String? = httpClient.post(url, params, headers)
+        val parseMap: Map<String, Any>? = resp?.parseJsonToMap()
+        return parseMap?.get("data")?.toJson()?.parseJsonToList(BangumiSubject::class.java) ?: listOf()
     }
 }

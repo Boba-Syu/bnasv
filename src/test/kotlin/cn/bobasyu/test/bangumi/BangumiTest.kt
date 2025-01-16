@@ -18,12 +18,13 @@ import kotlin.test.assertEquals
 @ExtendWith(VertxExtension::class)
 class BangumiTest {
 
-    fun applicationText(vertx: Vertx): ApplicationContext  = ApplicationContext(vertx)
+    fun applicationText(vertx: Vertx): ApplicationContext = ApplicationContext(vertx)
 
     @Test
     fun searchTest(vertx: Vertx, testContext: VertxTestContext) {
         val bangumiRepository = BangumiRepository(applicationText(vertx))
-        val resp = bangumiRepository.searchByKeyword(BangumiSearchDto(keyword = "86"))
+        val bangumiSearchDto = BangumiSearchDto(keyword = "86", types = listOf(BangumiSubjectType.ANIMATION))
+        val resp = bangumiRepository.searchByKeyword(bangumiSearchDto)
         println(resp)
         testContext.completeNow()
     }
@@ -38,8 +39,8 @@ class BangumiTest {
 
     @Test
     fun jsonTest() {
-        val bangumiSubject =BangumiSubject(
-            id=0,
+        val bangumiSubject = BangumiSubject(
+            id = 0,
             type = BangumiSubjectType.ANIMATION,
             date = LocalDate.now(),
         )
@@ -48,8 +49,8 @@ class BangumiTest {
 
     @Test
     fun jsonTest2() {
-        val bangumiSubject =BangumiSubject(
-            id=0,
+        val bangumiSubject = BangumiSubject(
+            id = 0,
             type = BangumiSubjectType.ANIMATION,
             date = LocalDate.now(),
         )
