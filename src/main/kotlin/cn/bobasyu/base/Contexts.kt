@@ -14,7 +14,7 @@ import io.vertx.ext.web.sstore.LocalSessionStore
  */
 class ApplicationContext(
     private val vertx: Vertx,
-    val configPath: String = "application.yaml",
+    private val configPath: String = "application.yaml",
 ) {
     /**
      * 路由

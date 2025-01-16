@@ -19,7 +19,7 @@ class ApplicationConfig(
     path: String
 ) {
     private val inputStream: InputStream by lazy {
-        this::class.java.classLoader.getResourceAsStream("application.yaml")!!
+        this::class.java.classLoader.getResourceAsStream(path)!!
     }
 
     private val yaml = Yaml()
