@@ -1,6 +1,6 @@
 package cn.bobasyu.base
 
-import cn.bobasyu.auth.JwtAuth
+import cn.bobasyu.base.auth.JwtAuth
 import cn.bobasyu.databeses.DatabaseHandler
 import cn.bobasyu.http.HttpClient
 import io.vertx.core.Vertx

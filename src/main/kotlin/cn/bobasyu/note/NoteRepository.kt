@@ -3,10 +3,9 @@ package cn.bobasyu.note
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
-import cn.bobasyu.entity.*
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import cn.bobasyu.utils.generateId
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
@@ -19,9 +18,9 @@ class NoteRepositoryVerticle(
     private val databaseHandler = applicationContext.databaseHandler
 
     override fun registerConsumer() = with(vertx.eventBus()) {
-        asyncConsumer<Long, NoteRecord>(NOTE_QUERY_BY_ID_EVENT) { queryNoteById(it) }
-        asyncConsumer<NoteDto, Unit>(NOTE_UPDATE_EVENT) { save(it) }
-        asyncConsumer<NotePageDto, List<NoteRecord>>(NOTE_PAGE_INFO) { pageInfo(it) }
+        asyncConsumer(NOTE_QUERY_BY_ID_EVENT, ::queryNoteById)
+        asyncConsumer(NOTE_UPDATE_EVENT, ::save)
+        asyncConsumer(NOTE_PAGE_INFO, ::pageInfo)
     }
 
     private fun count(notePageDto: NotePageDto): Int {
@@ -45,9 +44,9 @@ class NoteRepositoryVerticle(
     }
 
     private fun pageInfo(notePageDto: NotePageDto): List<NoteRecord> {
-        val offset = (notePageDto.pageNum - 1) * notePageDto.pageSize
+        val offset = (notePageDto.pageVal.pageNum - 1) * notePageDto.pageVal.pageSize
         return databaseHandler.from(NoteRecords).select().apply {
-            limit(offset, offset + notePageDto.pageSize)
+            limit(offset, offset + notePageDto.pageVal.pageSize)
             if (notePageDto.noteId != null) {
                 where { NoteRecords.noteId eq notePageDto.noteId }
             }

@@ -1,4 +1,4 @@
-package cn.bobasyu.constant
+package cn.bobasyu.user
 
 /**
  * 用户相关的总线事件名称

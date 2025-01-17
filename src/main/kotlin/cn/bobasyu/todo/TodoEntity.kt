@@ -1,12 +1,12 @@
-package cn.bobasyu.entity
+package cn.bobasyu.todo
 
-import cn.bobasyu.entity.TodoRecordConstant.CREATE_TIME_COLUMN
-import cn.bobasyu.entity.TodoRecordConstant.OTHER_PROPERTIES_COLUMN
-import cn.bobasyu.entity.TodoRecordConstant.TITLE_COLUMN
-import cn.bobasyu.entity.TodoRecordConstant.TODO_ID_COLUMN
-import cn.bobasyu.entity.TodoRecordConstant.TODO_LIST_COLUMN
-import cn.bobasyu.entity.TodoRecordConstant.TODO_RECORD
-import cn.bobasyu.entity.TodoRecordConstant.UPDATE_TIME_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.CREATE_TIME_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.OTHER_PROPERTIES_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.TITLE_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.TODO_ID_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.TODO_LIST_COLUMN
+import cn.bobasyu.todo.TodoRecordConstant.TODO_RECORD
+import cn.bobasyu.todo.TodoRecordConstant.UPDATE_TIME_COLUMN
 import cn.bobasyu.utils.BaseCodec
 import io.vertx.core.eventbus.EventBus
 import org.ktorm.entity.Entity

@@ -4,14 +4,10 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseException
 import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_INSERT_EVENT
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_EVENT
-import cn.bobasyu.entity.UserInsertDTO
-import cn.bobasyu.entity.UserLoginDTO
-import cn.bobasyu.entity.UserRecord
-import cn.bobasyu.entity.userRecords
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_EVENT
 import cn.bobasyu.utils.generateId
 import io.vertx.core.eventbus.EventBus
 import org.ktorm.dsl.eq
@@ -36,10 +32,10 @@ open class UserRepositoryVerticle(
      * 注册总线事件消费方法
      */
     override fun registerConsumer() = with(eventBus) {
-        asyncConsumer<List<UserRecord>>(USER_QUERY_EVENT) { queryUserList() }
-        asyncConsumer<Long, UserRecord> (USER_QUERY_BY_ID_EVENT){ queryUserById(it) }
-        asyncConsumer<UserInsertDTO, Unit>(USER_INSERT_EVENT) { insertUser(it) }
-        asyncConsumer<UserLoginDTO, UserRecord>(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT) { queryUserByUsernameAndPassword(it) }
+        asyncConsumer(USER_QUERY_EVENT, ::queryUserList)
+        asyncConsumer(USER_QUERY_BY_ID_EVENT, ::queryUserById)
+        asyncConsumer(USER_INSERT_EVENT, ::insertUser)
+        asyncConsumer(USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT, ::queryUserByUsernameAndPassword)
     }
 
     override suspend fun start() {

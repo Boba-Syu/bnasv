@@ -1,4 +1,4 @@
-package cn.bobasyu.constant
+package cn.bobasyu.note
 
 /**
  * 笔记相关的总线事件名称

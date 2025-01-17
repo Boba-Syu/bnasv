@@ -1,4 +1,4 @@
-package cn.bobasyu.entity
+package cn.bobasyu.user
 
 import cn.bobasyu.databeses.DatabaseHandler
 import cn.bobasyu.utils.BaseCodec

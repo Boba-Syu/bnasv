@@ -1,4 +1,4 @@
-package cn.bobasyu.auth
+package cn.bobasyu.base.auth
 
 import io.vertx.core.Vertx
 import io.vertx.ext.auth.jwt.JWTAuth

@@ -3,12 +3,16 @@ package cn.bobasyu.bangumi
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.ConfigName
-import cn.bobasyu.constant.BangumiConsumerConstant
-import cn.bobasyu.entity.BangumiCalendar
-import cn.bobasyu.entity.BangumiCalendarWeekdayEnum
-import cn.bobasyu.entity.BangumiSearchDto
-import cn.bobasyu.entity.BangumiSubject
-import cn.bobasyu.utils.ObjectJson
+import cn.bobasyu.bangumi.BangumiParamConstant.DATA
+import cn.bobasyu.bangumi.BangumiParamConstant.FILTER
+import cn.bobasyu.bangumi.BangumiParamConstant.KEYWORD
+import cn.bobasyu.bangumi.BangumiParamConstant.TYPE
+import cn.bobasyu.bangumi.entity.BangumiCalendar
+import cn.bobasyu.bangumi.entity.BangumiCalendarWeekdayEnum
+import cn.bobasyu.bangumi.entity.BangumiSearchDto
+import cn.bobasyu.bangumi.entity.BangumiSubject
+import cn.bobasyu.http.HttpClientConstant.AUTHORIZATION
+import cn.bobasyu.http.HttpClientConstant.USER_AGENT
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.parseJsonToList
 import cn.bobasyu.utils.parseJsonToMap
@@ -34,18 +38,14 @@ class BangumiRepository(
 
     private val headers: Map<String, String>
         get() = mapOf(
-            "Authorization" to bangumiConfig.authorization,
-            "User-Agent" to bangumiConfig.userAgent
+            AUTHORIZATION to bangumiConfig.authorization,
+            USER_AGENT to bangumiConfig.userAgent
         )
 
     override fun registerConsumer() = with(vertx.eventBus()) {
-        asyncConsumer<Map<BangumiCalendarWeekdayEnum, BangumiCalendar>>(BangumiConsumerConstant.CALENDAR) { calendar() }
-        asyncConsumer<BangumiSearchDto, List<BangumiSubject>>(BangumiConsumerConstant.FIND_BY_KEYWORD) {
-            searchByKeyword(
-                it
-            )
-        }
-        asyncConsumer<Int, BangumiSubject?>(BangumiConsumerConstant.FIND_BY_ID) { searchById(it) }
+        asyncConsumer(BangumiConsumerConstant.CALENDAR, ::calendar)
+        asyncConsumer(BangumiConsumerConstant.FIND_BY_KEYWORD, ::searchByKeyword)
+        asyncConsumer(BangumiConsumerConstant.FIND_BY_ID, ::searchById)
     }
 
     /**
@@ -65,15 +65,15 @@ class BangumiRepository(
         val url = "${bangumiConfig.baseUrl}/v0/search/subjects"
         val params: JsonObject = json {
             obj(
-                "filter" to obj(
-                    "type" to (bangumiSearchDto.types?.map { it.code }?.toList() ?: listOf())
+                FILTER to obj(
+                    TYPE to (bangumiSearchDto.types?.map { it.code }?.toList() ?: listOf())
                 ),
-                "keyword" to bangumiSearchDto.keyword
+                KEYWORD to bangumiSearchDto.keyword
             )
         }
         val resp: String? = httpClient.post(url, params, headers)
         val parseMap: Map<String, Any>? = resp?.parseJsonToMap()
-        return parseMap?.get("data")?.toJson()?.parseJsonToList(BangumiSubject::class.java) ?: listOf()
+        return parseMap?.get(DATA)?.toJson()?.parseJsonToList(BangumiSubject::class.java) ?: listOf()
     }
 
     fun searchById(subjectId: Int): BangumiSubject? {

@@ -2,14 +2,10 @@ package cn.bobasyu.note
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.constant.NoteParamConstant
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
-import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
-import cn.bobasyu.entity.NoteDto
-import cn.bobasyu.entity.NotePageDto
-import cn.bobasyu.entity.NoteRecord
-import cn.bobasyu.entity.PageInfo
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
+import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
+import cn.bobasyu.base.PageInfo
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
@@ -25,9 +21,9 @@ class NoteHandler(
     private val eventBus: EventBus by lazy { vertx.eventBus() }
 
     override fun setUserRouter() = with(applicationContext.router) {
-        get("/note").doHandler<Long, JsonObject> { queryById(it) }
-        post("/note").doHandler<NoteDto, String> { updateNote(it) }
-        post("/note/page").doHandler<NotePageDto, PageInfo<JsonObject>> { pageInfo(it) }
+        get("/note").doHandler(::queryById)
+        post("/note").doHandler(::updateNote)
+        post("/note/page").doHandler(::pageInfo)
     }
 
     private suspend fun updateNote(noteDto: NoteDto): String {

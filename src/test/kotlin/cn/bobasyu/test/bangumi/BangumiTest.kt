@@ -2,9 +2,9 @@ package cn.bobasyu.test.bangumi;
 
 import cn.bobasyu.bangumi.BangumiRepository
 import cn.bobasyu.base.ApplicationContext
-import cn.bobasyu.entity.BangumiSearchDto
-import cn.bobasyu.entity.BangumiSubject
-import cn.bobasyu.entity.BangumiSubjectType
+import cn.bobasyu.bangumi.entity.BangumiSearchDto
+import cn.bobasyu.bangumi.entity.BangumiSubject
+import cn.bobasyu.bangumi.entity.BangumiSubjectType
 import cn.bobasyu.utils.parseJson
 import cn.bobasyu.utils.parseJsonToList
 import cn.bobasyu.utils.toJson

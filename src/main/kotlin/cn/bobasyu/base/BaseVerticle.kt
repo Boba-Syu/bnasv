@@ -130,10 +130,10 @@ open class BaseCoroutineVerticle(
     /**
      * 以协程方式异步消费总线事件方法
      */
-    fun <RESP> EventBus.asyncConsumer(address: String, handler: () -> RESP) {
+    fun <RESP> EventBus.asyncConsumer(address: String, handler: () -> RESP?) {
         consumer<Unit>(address) { message ->
             try {
-                val resp: RESP? = handler()
+                val resp = handler()
                 message.reply(resp)
             } catch (e: Exception) {
                 message.fail(500, e.message)

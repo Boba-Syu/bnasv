@@ -1,5 +1,10 @@
 package cn.bobasyu.entity
 
+import cn.bobasyu.bangumi.entity.registerBangumiCalendarCodecs
+import cn.bobasyu.base.PageInfo
+import cn.bobasyu.note.registerNoteCodecs
+import cn.bobasyu.todo.registerTodoCodecs
+import cn.bobasyu.user.registerUserCodecs
 import cn.bobasyu.utils.BaseCodec
 import io.vertx.core.eventbus.EventBus
 

@@ -1,4 +1,4 @@
-package cn.bobasyu.entity
+package cn.bobasyu.bangumi.entity
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -22,49 +22,30 @@ enum class BangumiSubjectType(
 
 data class BangumiImages(
     val large: String = "",
-
     val common: String = "",
-
     val medium: String = "",
-
     val small: String = "",
-
     val grid: String = "",
 ) : Serializable
 
 data class BangumiSubject(
     val id: Int,
-
     val type: BangumiSubjectType,
-
     val name: String = "",
-
     @JsonProperty("name_cn")
     val nameCn: String = "",
-
     val summary: String = "",
-
     val date: LocalDate,
-
     val platform: String = "",
-
     val images: BangumiImages = BangumiImages(),
-
-
-    /**
-     * 书籍条目的册数
-     */
+    // 书籍条目的册数
     val volumes: Int? = null,
-
-    /**
-     * 数据库中的章节数量
-     */
+    // 数据库中的章节数量
     @JsonProperty("total_episodes")
     val totalEpisodes: Int? = null,
 ) : Serializable
 
 data class BangumiSearchDto(
     val keyword: String,
-
     val types: List<BangumiSubjectType>? = null
 ) : Serializable

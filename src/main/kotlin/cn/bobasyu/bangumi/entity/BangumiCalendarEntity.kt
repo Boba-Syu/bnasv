@@ -1,4 +1,4 @@
-package cn.bobasyu.entity
+package cn.bobasyu.bangumi.entity
 
 import cn.bobasyu.utils.BaseCodec
 import com.fasterxml.jackson.annotation.JsonFormat
@@ -33,14 +33,10 @@ data class BangumiCalendarItem(
     @JsonProperty("name_cn")
     val nameCn: String,
     val summary: String,
-    /**
-     * 放送星期
-     */
+    // 放送星期
     @JsonProperty("air_weekday")
     val airWeekday: BangumiCalendarWeekdayEnum,
-    /**
-     * 放送开始日期
-     */
+    // 放送开始日期
     @JsonProperty("air_date")
     val airDate: LocalDate,
     val images: BangumiImages

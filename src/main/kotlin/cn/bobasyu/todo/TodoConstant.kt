@@ -1,4 +1,4 @@
-package cn.bobasyu.constant
+package cn.bobasyu.todo
 
 object TodoRepositoryConsumerConstant {
     const val TODO_QUERY_BY_ID_EVENT: String = "db.todo.query.by.id"

@@ -2,14 +2,11 @@ package cn.bobasyu.user
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.constant.UserRecordConstant.USERNAME
-import cn.bobasyu.constant.UserRecordConstant.USER_ID
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_INSERT_EVENT
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
-import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
-import cn.bobasyu.entity.UserInsertDTO
-import cn.bobasyu.entity.UserLoginDTO
-import cn.bobasyu.entity.UserRecord
+import cn.bobasyu.user.UserRecordConstant.USERNAME
+import cn.bobasyu.user.UserRecordConstant.USER_ID
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
@@ -33,11 +30,11 @@ class UserVerticle(
      * 注册路由
      */
     override fun setUserRouter() = with(applicationContext.router) {
-        post("/login").doHandler<UserLoginDTO, String> { loginHandler(it) }
-        post("/register").doHandler<UserInsertDTO, String> { queryRegisterHandler(it) }
+        post("/login").doHandler(::loginHandler)
+        post("/register").doHandler(::queryRegisterHandler)
 
         route("/user/*").authHandler()
-        get("/user").doHandler<Long, UserRecord> { queryByIdHandler(it) }
+        get("/user").doHandler<Long, UserRecord>(::queryByIdHandler)
     }
 
     private suspend fun loginHandler(userLoginDTO: UserLoginDTO): String {

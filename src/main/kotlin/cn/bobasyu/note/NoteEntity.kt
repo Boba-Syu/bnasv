@@ -1,13 +1,14 @@
-package cn.bobasyu.entity
+package cn.bobasyu.note
 
+import cn.bobasyu.base.PageVal
 import cn.bobasyu.databeses.DatabaseHandler
-import cn.bobasyu.entity.NoteRecordConstant.CONTENT_COLUMN
-import cn.bobasyu.entity.NoteRecordConstant.CREATE_TIME_COLUMN
-import cn.bobasyu.entity.NoteRecordConstant.NOTE_ID_COLUMN
-import cn.bobasyu.entity.NoteRecordConstant.NOTE_RECORD
-import cn.bobasyu.entity.NoteRecordConstant.OTHER_PROPERTIES_COLUMN
-import cn.bobasyu.entity.NoteRecordConstant.TITLE_COLUMN
-import cn.bobasyu.entity.NoteRecordConstant.UPDATE_TIME_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.CONTENT_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.CREATE_TIME_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.NOTE_ID_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.NOTE_RECORD
+import cn.bobasyu.note.NoteRecordConstant.OTHER_PROPERTIES_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.TITLE_COLUMN
+import cn.bobasyu.note.NoteRecordConstant.UPDATE_TIME_COLUMN
 import cn.bobasyu.utils.BaseCodec
 import io.vertx.core.eventbus.EventBus
 import org.ktorm.entity.Entity
@@ -66,8 +67,7 @@ data class NoteDto(
 )
 
 data class NotePageDto(
-    val pageNum: Int,
-    val pageSize: Int,
+    val pageVal: PageVal,
 
     val noteId: Long? = null,
     val title: String? = null,
@@ -81,5 +81,4 @@ data class NotePageDto(
 fun EventBus.registerNoteCodecs() : EventBus =this.apply {
     registerDefaultCodec(NoteRecord::class.java, BaseCodec(NoteRecord::class.java))
     registerDefaultCodec(NoteDto::class.java, BaseCodec(NoteDto::class.java))
-    registerDefaultCodec(NotePageDto::class.java, BaseCodec(NotePageDto::class.java))
 }
