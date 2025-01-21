@@ -1,16 +1,14 @@
 package cn.bobasyu.note
 
 import cn.bobasyu.base.PageVal
+import cn.bobasyu.constant.BaseRecordConstant.CREATE_TIME_COLUMN
+import cn.bobasyu.constant.BaseRecordConstant.OTHER_PROPERTIES_COLUMN
+import cn.bobasyu.constant.BaseRecordConstant.UPDATE_TIME_COLUMN
+import cn.bobasyu.constant.NoteRecordConstant.CONTENT_COLUMN
+import cn.bobasyu.constant.NoteRecordConstant.NOTE_ID_COLUMN
+import cn.bobasyu.constant.NoteRecordConstant.NOTE_RECORD
+import cn.bobasyu.constant.NoteRecordConstant.TITLE_COLUMN
 import cn.bobasyu.databeses.DatabaseHandler
-import cn.bobasyu.note.NoteRecordConstant.CONTENT_COLUMN
-import cn.bobasyu.note.NoteRecordConstant.CREATE_TIME_COLUMN
-import cn.bobasyu.note.NoteRecordConstant.NOTE_ID_COLUMN
-import cn.bobasyu.note.NoteRecordConstant.NOTE_RECORD
-import cn.bobasyu.note.NoteRecordConstant.OTHER_PROPERTIES_COLUMN
-import cn.bobasyu.note.NoteRecordConstant.TITLE_COLUMN
-import cn.bobasyu.note.NoteRecordConstant.UPDATE_TIME_COLUMN
-import cn.bobasyu.utils.BaseCodec
-import io.vertx.core.eventbus.EventBus
 import org.ktorm.entity.Entity
 import org.ktorm.entity.sequenceOf
 import org.ktorm.jackson.json
@@ -19,17 +17,9 @@ import org.ktorm.schema.Table
 import org.ktorm.schema.datetime
 import org.ktorm.schema.long
 import org.ktorm.schema.varchar
+import java.io.Serializable
 import java.time.LocalDateTime
 
-object NoteRecordConstant {
-    const val NOTE_RECORD = "note_record"
-    const val NOTE_ID_COLUMN = "note_id"
-    const val TITLE_COLUMN = "title"
-    const val CONTENT_COLUMN = "content"
-    const val OTHER_PROPERTIES_COLUMN = "other_properties"
-    const val CREATE_TIME_COLUMN = "create_time"
-    const val UPDATE_TIME_COLUMN = "update_time"
-}
 
 /**
  * 数据库操作实体封装
@@ -44,7 +34,7 @@ object NoteRecords : Table<NoteRecord>(NOTE_RECORD) {
     val updateTime: Column<LocalDateTime> = datetime(UPDATE_TIME_COLUMN).bindTo { it.updateTime }
 }
 
-interface NoteRecord : Entity<NoteRecord> {
+interface NoteRecord : Entity<NoteRecord>, Serializable {
     companion object : Entity.Factory<NoteRecord>()
 
     var noteId: Long
@@ -62,9 +52,8 @@ data class NoteDto(
     val title: String?,
     val content: String?,
     val otherProperties: Map<String, Any>?,
-    val createTime: LocalDateTime?,
     val updateTime: LocalDateTime?
-)
+) : Serializable
 
 data class NotePageDto(
     val pageVal: PageVal,
@@ -76,9 +65,4 @@ data class NotePageDto(
     val createTimeEnd: LocalDateTime? = null,
     val updateTimeBegin: LocalDateTime? = null,
     val updateTimeEnd: LocalDateTime? = null
-)
-
-fun EventBus.registerNoteCodecs() : EventBus =this.apply {
-    registerDefaultCodec(NoteRecord::class.java, BaseCodec(NoteRecord::class.java))
-    registerDefaultCodec(NoteDto::class.java, BaseCodec(NoteDto::class.java))
-}
+) : Serializable

@@ -2,11 +2,11 @@ package cn.bobasyu.user
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.user.UserRecordConstant.USERNAME
-import cn.bobasyu.user.UserRecordConstant.USER_ID
-import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_INSERT_EVENT
-import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
-import cn.bobasyu.user.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_INSERT_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_ID_EVENT
+import cn.bobasyu.constant.UserRepositoryConsumerConstant.USER_QUERY_BY_USERNAME_AND_PASSWORD_EVENT
+import cn.bobasyu.user.UserParamConstant.USERNAME
+import cn.bobasyu.user.UserParamConstant.USER_ID
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message

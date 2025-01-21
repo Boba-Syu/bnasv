@@ -11,6 +11,7 @@ import cn.bobasyu.bangumi.entity.BangumiCalendar
 import cn.bobasyu.bangumi.entity.BangumiCalendarWeekdayEnum
 import cn.bobasyu.bangumi.entity.BangumiSearchDto
 import cn.bobasyu.bangumi.entity.BangumiSubject
+import cn.bobasyu.constant.BangumiConsumerConstant
 import cn.bobasyu.http.HttpClientConstant.AUTHORIZATION
 import cn.bobasyu.http.HttpClientConstant.USER_AGENT
 import cn.bobasyu.utils.parseJson

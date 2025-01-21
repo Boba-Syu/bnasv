@@ -5,7 +5,9 @@ import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.ConfigName
 import cn.bobasyu.base.failure
 import cn.bobasyu.base.unauthorized
-import cn.bobasyu.entity.registerCodecs
+import cn.bobasyu.catalog.deployCatalogVerticle
+import cn.bobasyu.note.deployNoteVerticle
+import cn.bobasyu.user.deployUserVerticle
 import cn.bobasyu.utils.toJson
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
@@ -74,9 +76,10 @@ class MainVerticle(
 
 fun main() {
     val deployServiceVerticleHandlerList = listOf(
-//        Vertx::deployUserVerticle,
-//        Vertx::deployNoteVerticle,
-        Vertx::deployBangumiVerticle
+        Vertx::deployUserVerticle,
+        Vertx::deployNoteVerticle,
+        Vertx::deployBangumiVerticle,
+        Vertx::deployCatalogVerticle
     )
 
     val vertx = Vertx.vertx()
@@ -87,7 +90,6 @@ fun main() {
     )
 
     vertx.apply {
-        eventBus().registerCodecs()
         deployVerticle(mainVerticle)
     }
 }

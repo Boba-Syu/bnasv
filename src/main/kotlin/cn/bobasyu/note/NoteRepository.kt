@@ -3,9 +3,12 @@ package cn.bobasyu.note
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseRepositoryVerticle
 import cn.bobasyu.base.NoSuchRecordInDatabaseException
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
+import cn.bobasyu.base.PageList
+import cn.bobasyu.base.pageListOf
+import cn.bobasyu.base.success
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import cn.bobasyu.utils.generateId
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
@@ -43,9 +46,9 @@ class NoteRepositoryVerticle(
         }.count()
     }
 
-    private fun pageInfo(notePageDto: NotePageDto): List<NoteRecord> {
+    private fun pageInfo(notePageDto: NotePageDto): PageList<NoteRecord> {
         val offset = (notePageDto.pageVal.pageNum - 1) * notePageDto.pageVal.pageSize
-        return databaseHandler.from(NoteRecords).select().apply {
+        val noteRecordList: List<NoteRecord> =  databaseHandler.from(NoteRecords).select().apply {
             limit(offset, offset + notePageDto.pageVal.pageSize)
             if (notePageDto.noteId != null) {
                 where { NoteRecords.noteId eq notePageDto.noteId }
@@ -63,6 +66,8 @@ class NoteRepositoryVerticle(
                 where { NoteRecords.updateTime between notePageDto.updateTimeBegin..notePageDto.updateTimeEnd }
             }
         }.map { row -> NoteRecords.createEntity(row) }
+        val total: Int = count(notePageDto)
+        return pageListOf(total, noteRecordList)
     }
 
 
@@ -74,7 +79,7 @@ class NoteRepositoryVerticle(
         return noteRecord
     }
 
-    private fun save(noteDto: NoteDto) {
+    private fun save(noteDto: NoteDto): String {
         databaseHandler.insertOrUpdate(NoteRecords) {
             if (noteDto.noteId != null) {
                 set(it.noteId, noteDto.noteId)
@@ -92,5 +97,6 @@ class NoteRepositoryVerticle(
             }
             set(it.updateTime, noteDto.updateTime)
         }
+        return SUCCESS
     }
 }

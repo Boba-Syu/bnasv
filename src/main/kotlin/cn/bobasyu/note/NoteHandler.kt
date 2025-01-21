@@ -2,10 +2,11 @@ package cn.bobasyu.note
 
 import cn.bobasyu.base.ApplicationContext
 import cn.bobasyu.base.BaseServiceVerticle
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
-import cn.bobasyu.note.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import cn.bobasyu.base.PageInfo
+import cn.bobasyu.base.PageList
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_PAGE_INFO
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_QUERY_BY_ID_EVENT
+import cn.bobasyu.constant.NoteRepositoryConsumerConstant.NOTE_UPDATE_EVENT
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
@@ -46,10 +47,10 @@ class NoteHandler(
     }
 
     private suspend fun pageInfo(notePageDto: NotePageDto): PageInfo<JsonObject> {
-        val resp: Message<PageInfo<NoteRecord>> =
-            eventBus.request<PageInfo<NoteRecord>>(NOTE_PAGE_INFO, notePageDto)
+        val resp: Message<PageList<NoteRecord>> =
+            eventBus.request<PageList<NoteRecord>>(NOTE_PAGE_INFO, notePageDto)
                 .coAwait()
-        return PageInfo(resp.body().list.map {
+        return PageInfo(resp.body().map {
             json {
                 obj(
                     NoteParamConstant.NOTE_ID to it.noteId,

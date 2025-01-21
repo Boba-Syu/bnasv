@@ -1,32 +1,26 @@
 package cn.bobasyu.todo
 
-import cn.bobasyu.todo.TodoRecordConstant.CREATE_TIME_COLUMN
-import cn.bobasyu.todo.TodoRecordConstant.OTHER_PROPERTIES_COLUMN
-import cn.bobasyu.todo.TodoRecordConstant.TITLE_COLUMN
-import cn.bobasyu.todo.TodoRecordConstant.TODO_ID_COLUMN
-import cn.bobasyu.todo.TodoRecordConstant.TODO_LIST_COLUMN
-import cn.bobasyu.todo.TodoRecordConstant.TODO_RECORD
-import cn.bobasyu.todo.TodoRecordConstant.UPDATE_TIME_COLUMN
-import cn.bobasyu.utils.BaseCodec
-import io.vertx.core.eventbus.EventBus
+import cn.bobasyu.constant.BaseRecordConstant.CREATE_TIME_COLUMN
+import cn.bobasyu.constant.BaseRecordConstant.OTHER_PROPERTIES_COLUMN
+import cn.bobasyu.constant.BaseRecordConstant.UPDATE_TIME_COLUMN
+import cn.bobasyu.constant.TodoRecordConstant.TITLE_COLUMN
+import cn.bobasyu.constant.TodoRecordConstant.TODO_ID_COLUMN
+import cn.bobasyu.constant.TodoRecordConstant.TODO_LIST_COLUMN
+import cn.bobasyu.constant.TodoRecordConstant.TODO_RECORD
+import cn.bobasyu.databeses.DatabaseHandler
+import cn.bobasyu.note.noteRecords
 import org.ktorm.entity.Entity
+import org.ktorm.entity.sequenceOf
 import org.ktorm.jackson.json
 import org.ktorm.schema.Column
 import org.ktorm.schema.Table
 import org.ktorm.schema.datetime
 import org.ktorm.schema.long
 import org.ktorm.schema.varchar
+import java.io.Serializable
 import java.time.LocalDateTime
 
-object TodoRecordConstant {
-    const val TODO_RECORD = "todo_record"
-    const val TODO_ID_COLUMN = "todo_id"
-    const val TITLE_COLUMN = "title"
-    const val TODO_LIST_COLUMN = "todo_list"
-    const val OTHER_PROPERTIES_COLUMN = "other_properties"
-    const val CREATE_TIME_COLUMN = "create_time"
-    const val UPDATE_TIME_COLUMN = "update_time"
-}
+
 
 object TodoRecords : Table<TodoRecord>(TODO_RECORD) {
     val todoId: Column<Long> = long(TODO_ID_COLUMN).primaryKey().bindTo { it.todoId }
@@ -38,7 +32,7 @@ object TodoRecords : Table<TodoRecord>(TODO_RECORD) {
     val updateTime: Column<LocalDateTime> = datetime(UPDATE_TIME_COLUMN).bindTo { it.updateTime }
 }
 
-interface TodoRecord : Entity<TodoRecord> {
+interface TodoRecord : Entity<TodoRecord>, Serializable {
     companion object : Entity.Factory<TodoRecord>()
 
     var todoId: Long
@@ -49,14 +43,11 @@ interface TodoRecord : Entity<TodoRecord> {
     var updateTime: LocalDateTime
 }
 
+val DatabaseHandler.todoRecords get() = this.database.sequenceOf(TodoRecords)
+
 data class TodoItem (
     val itemName : String,
     val itemContent: String,
     val subItems: List<TodoItem>? = null,
     val otherProperties: Map<String, Any> = emptyMap()
-)
-
-fun EventBus.registerTodoCodecs(): EventBus = this.apply {
-    registerDefaultCodec(TodoRecord::class.java, BaseCodec(TodoRecord::class.java))
-    registerDefaultCodec(TodoItem::class.java, BaseCodec(TodoItem::class.java))
-}
+) : Serializable

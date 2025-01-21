@@ -1,10 +1,8 @@
 package cn.bobasyu.bangumi.entity
 
-import cn.bobasyu.utils.BaseCodec
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
-import io.vertx.core.eventbus.EventBus
 import java.io.Serializable
 import java.time.LocalDate
 
@@ -46,9 +44,3 @@ data class BangumiCalendarItem(
 data class BangumiCalendar(
     val items: List<BangumiCalendarItem>
 ) : Serializable
-
-fun EventBus.registerBangumiCalendarCodecs(): EventBus = this.apply {
-    registerDefaultCodec(BangumiCalendar::class.java, BaseCodec(BangumiCalendar::class.java))
-    registerDefaultCodec(BangumiCalendarItem::class.java, BaseCodec(BangumiCalendarItem::class.java))
-    registerDefaultCodec(BangumiCalendarWeekdayEnum::class.java, BaseCodec(BangumiCalendarWeekdayEnum::class.java))
-}
